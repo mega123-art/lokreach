@@ -1,3 +1,4 @@
+@import "tailwindcss";
 .text1{
     display:flex ;
     flex-direction: row;
