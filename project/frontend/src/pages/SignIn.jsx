@@ -2,10 +2,9 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import LoadingSpinner from "../components/UI/LoadingSpinner";
-import axios from "axios";
 
 const SignIn = () => {
-  const { login } = useAuth();
+  const { login, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({ email: "", password: "" });
@@ -21,27 +20,36 @@ const SignIn = () => {
     setIsLoading(true);
 
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/auth/signin`,
-        form
-      );
-      const { token, user } = res.data;
+      console.log("Starting sign in process...");
 
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
-      login(user.email, form.password);
+      if (!form.email || !form.password) {
+        throw new Error("Please fill in all fields");
+      }
+
+      const data = await login(form.email, form.password);
+      const { user } = data;
+
+      console.log("Sign in successful, redirecting user:", user);
 
       // Redirect based on user role
-      if (user.role === "brand") navigate("/brand");
-      else if (user.role === "admin") navigate("/admin");
-      else if (user.role === "creator") navigate("/creator");
-      else navigate("/");
+      if (user.role === "brand") {
+        navigate("/brand");
+      } else if (user.role === "admin") {
+        navigate("/admin");
+      } else if (user.role === "creator") {
+        navigate("/creator");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
-      setError(err.response?.data?.error || "Login failed");
+      console.error("Sign in error:", err);
+      setError(err.message || "Login failed");
     } finally {
       setIsLoading(false);
     }
   };
+
+  const loading = isLoading || authLoading;
 
   return (
     <div className="auth-container">
@@ -51,15 +59,22 @@ const SignIn = () => {
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
               Welcome Back
             </h1>
-            <p className="text-gray-600">
-              Sign in to your LocoLab account
-            </p>
+            <p className="text-gray-600">Sign in to your LocoLab account</p>
           </div>
-          
+
           <div className="card-body">
             {error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-red-600 text-sm">{error}</p>
+              </div>
+            )}
+
+            {/* Debug info in development */}
+            {import.meta.env.DEV && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-blue-600 text-xs">
+                  API URL: {import.meta.env.VITE_API_URL}
+                </p>
               </div>
             )}
 
@@ -74,7 +89,7 @@ const SignIn = () => {
                   className="form-input"
                   placeholder="Enter your email"
                   required
-                  disabled={isLoading}
+                  disabled={loading}
                 />
               </div>
 
@@ -88,22 +103,22 @@ const SignIn = () => {
                   className="form-input"
                   placeholder="Enter your password"
                   required
-                  disabled={isLoading}
+                  disabled={loading}
                 />
               </div>
 
               <button
                 type="submit"
                 className="btn btn-primary btn-lg w-full"
-                disabled={isLoading}
+                disabled={loading}
               >
-                {isLoading ? (
+                {loading ? (
                   <>
                     <LoadingSpinner size="sm" />
                     Signing In...
                   </>
                 ) : (
-                  'Sign In'
+                  "Sign In"
                 )}
               </button>
             </form>
@@ -117,11 +132,14 @@ const SignIn = () => {
               </Link>
             </div>
           </div>
-          
+
           <div className="card-footer text-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
-              <Link to="/signup" className="text-red-600 hover:text-red-700 font-medium">
+              Don't have an account?{" "}
+              <Link
+                to="/signup"
+                className="text-red-600 hover:text-red-700 font-medium"
+              >
                 Sign up
               </Link>
             </p>
