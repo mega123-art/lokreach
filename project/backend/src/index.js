@@ -25,7 +25,7 @@ const corsOptions = {
       "https://localhost:5173",
       process.env.FRONTEND_URL,
       // Add your actual Vercel URL here
-      "https://your-vercel-app.vercel.app",
+      "https://lokreach.vercel.app",
     ].filter(Boolean);
 
     // Allow any vercel.app subdomain
