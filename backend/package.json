@@ -9,7 +9,11 @@
     "start": "node src/index.js",
     "debug": "node --inspect src/index.js"
   },
-  "keywords": ["locolab", "api", "backend"],
+  "keywords": [
+    "locolab",
+    "api",
+    "backend"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
@@ -22,7 +26,7 @@
     "compression": "^1.7.4",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2",
+    "express": "^4.21.2",
     "express-rate-limit": "^7.1.5",
     "express-validator": "^7.0.1",
     "helmet": "^7.1.0",
