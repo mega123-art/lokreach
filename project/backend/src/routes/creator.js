@@ -4,25 +4,7 @@ const User = require("../models/User");
 const CreatorProfile = require("../models/CreatorProfile");
 const { authenticate, authorizeRoles } = require("../middleware/auth");
 
-// GET /api/creators?city=CityName
-router.get("/", authenticate, authorizeRoles("brand"), async (req, res) => {
-  try {
-    const city = req.query.city;
-    if (!city) return res.status(400).json({ error: "City is required" });
-
-    // First, find all creator profiles matching the location
-    const profiles = await CreatorProfile.find({ location: city })
-      .populate("user", "username contactEmail")
-      .exec();
-
-    res.status(200).json({ creators: profiles });
-  } catch (err) {
-    console.error("Fetch creators error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-// GET /api/creators/all - Get all creators (for brands)
+// ✅ Moved this route first — more specific route should come before "/"
 router.get("/all", authenticate, authorizeRoles("brand"), async (req, res) => {
   try {
     const profiles = await CreatorProfile.find()
@@ -36,6 +18,25 @@ router.get("/all", authenticate, authorizeRoles("brand"), async (req, res) => {
   }
 });
 
+// ✅ General route comes after more specific ones
+// GET /api/creators?city=CityName
+router.get("/", authenticate, authorizeRoles("brand"), async (req, res) => {
+  try {
+    const city = req.query.city;
+    if (!city) return res.status(400).json({ error: "City is required" });
+
+    const profiles = await CreatorProfile.find({ location: city })
+      .populate("user", "username contactEmail")
+      .exec();
+
+    res.status(200).json({ creators: profiles });
+  } catch (err) {
+    console.error("Fetch creators error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// GET /api/creators/profile/:id
 router.get("/profile/:id", async (req, res) => {
   try {
     const creatorId = req.params.id;
