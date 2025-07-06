@@ -1,57 +1,54 @@
 import { Link } from "react-router-dom";
+import './LandingPage.css';
 
 const LandingPage = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-red-600">LocoLab</h1>
-            </div>
-            
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#home" className="text-gray-700 hover:text-red-600 transition-colors">Home</a>
-              <a href="#about" className="text-gray-700 hover:text-red-600 transition-colors">About Us</a>
-              <a href="#features" className="text-gray-700 hover:text-red-600 transition-colors">Features</a>
-              <a href="#contact" className="text-gray-700 hover:text-red-600 transition-colors">Contact</a>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Link to="/signin" className="btn btn-outline btn-sm">Sign In</Link>
-              <Link to="/signup" className="btn btn-primary btn-sm">Sign Up</Link>
-            </div>
+      <nav className="bg-[#d10055] sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex justify-between items-center py-4">
+          
+          {/* Logo */}
+          <text className="Logo">LokReach</text>
+
+          {/* Navigation Links */}
+          <div className="hidden md:flex items-center space-x-6 font-semibold text-white">
+            <a href="#home" className="nav1">Home</a>
+            <a href="#about" className="nav1">About Us</a>
+            <a href="#contact" className="nav1 end1">Contact Us</a>
+            <button className="btn2"><Link to="/signin" className="nav2">Sign in</Link></button>
+            <button className="btn2">
+            <Link
+              to="/signup"
+              className="nav2"
+            >
+              Sign up
+            </Link>
+            </button>
           </div>
         </div>
-      </nav>
+      </div>
+    </nav>
 
       {/* Hero Section */}
       <section id="home" className="py-20 bg-gradient-to-br from-red-50 via-white to-red-50">
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-              <span className="text-gray-900">The Marketplace Where</span>
-              <br />
-              <span className="text-red-600 bg-gradient-to-r from-red-600 to-red-500 bg-clip-text text-transparent">
-                Influence Meets
-              </span>
-              <br />
-              <span className="text-gray-900">Local Impact</span>
-            </h1>
+    
+              <div className="text1 text0"><h1 className="text11">The</h1><h1 className="redtext text11">Marketplace</h1><h1 className="text11">Where</h1></div>
+              <div className="text1"><h1 className="redtext text11">Influence</h1><h1 className="text11">Meets</h1><h1 className="redtext text11">Local</h1><h1 className="text11">Impact</h1></div>
+              
+              
             
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Connect brands with authentic local content creators. Build meaningful partnerships 
-              that drive real engagement and create lasting impact in communities across India.
+            
+            <p className="text12">
+            Whether you're a brand looking to promote or someone ready to earn <br/>you're in the right place
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Link to="/signup" className="btn btn-primary btn-lg transform hover:scale-105 transition-transform">
-                🎨 Join as Creator
-              </Link>
-              <Link to="/signup" className="btn btn-secondary btn-lg transform hover:scale-105 transition-transform">
-                🏢 Partner as Brand
-              </Link>
+            <div className="flex flex-row sm:flex-row gap-4 justify-center mb-12">
+              <button className="btn1 btn-primary"><Link className='btn1' to='/signup'>I am a creator</Link></button>
+              <button className="btn1 btn-primary">We are a brand</button>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
