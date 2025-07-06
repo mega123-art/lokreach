@@ -40,33 +40,69 @@ router.post("/signup", async (req, res) => {
 
     if (role === "creator" && !username) {
       console.log("❌ Validation failed: Username required for creator");
-      return res
-        .status(400)
-        .json({ error: "Username is required for creators" });
+      return res.status(400).json({
+        error: "Username is required for creators",
+      });
     }
 
     if (role === "creator" && !contactEmail) {
       console.log("❌ Validation failed: Contact email required for creator");
-      return res
-        .status(400)
-        .json({ error: "Contact email is required for creators" });
+      return res.status(400).json({
+        error: "Contact email is required for creators",
+      });
+    }
+
+    // Normalize inputs
+    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedUsername = username ? username.toLowerCase().trim() : null;
+    const normalizedContactEmail = contactEmail
+      ? contactEmail.toLowerCase().trim()
+      : null;
+
+    // Validate username format for creators
+    if (role === "creator" && normalizedUsername) {
+      if (!/^[a-zA-Z0-9_]+$/.test(normalizedUsername)) {
+        console.log(
+          "❌ Validation failed: Invalid username format:",
+          normalizedUsername
+        );
+        return res.status(400).json({
+          error: "Username can only contain letters, numbers, and underscores",
+        });
+      }
+
+      if (normalizedUsername.length < 3 || normalizedUsername.length > 30) {
+        console.log(
+          "❌ Validation failed: Username length invalid:",
+          normalizedUsername
+        );
+        return res.status(400).json({
+          error: "Username must be between 3 and 30 characters",
+        });
+      }
     }
 
     // Check if email already exists
-    console.log("🔍 Checking if email exists:", email);
-    const existingUser = await User.findOne({ email });
+    console.log("🔍 Checking if email exists:", normalizedEmail);
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
-      console.log("❌ Email already exists:", email);
-      return res.status(409).json({ error: "Email already in use" });
+      console.log("❌ Email already exists:", normalizedEmail);
+      return res.status(409).json({
+        error: "Email already in use",
+        field: "email",
+      });
     }
 
     // Check username uniqueness for creators
-    if (role === "creator") {
-      console.log("🔍 Checking if username exists:", username);
-      const existingUsername = await User.findOne({ username });
-      if (existingUsername) {
-        console.log("❌ Username already exists:", username);
-        return res.status(409).json({ error: "Username already taken" });
+    if (role === "creator" && normalizedUsername) {
+      console.log("🔍 Checking if username exists:", normalizedUsername);
+      const isAvailable = await User.isUsernameAvailable(normalizedUsername);
+      if (!isAvailable) {
+        console.log("❌ Username already exists:", normalizedUsername);
+        return res.status(409).json({
+          error: "Username already taken",
+          field: "username",
+        });
       }
     }
 
@@ -75,18 +111,18 @@ router.post("/signup", async (req, res) => {
 
     console.log("👤 Creating new user...");
     const newUser = new User({
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
       role,
-      username: role === "creator" ? username : undefined,
-      contactEmail: role === "creator" ? contactEmail : undefined,
+      username: role === "creator" ? normalizedUsername : undefined,
+      contactEmail: role === "creator" ? normalizedContactEmail : undefined,
     });
 
     await newUser.save();
 
     console.log("✅ User created successfully:", {
       id: newUser._id,
-      email,
+      email: normalizedEmail,
       role,
       username: newUser.username,
     });
@@ -110,9 +146,29 @@ router.post("/signup", async (req, res) => {
     // Handle specific MongoDB errors
     if (err.code === 11000) {
       const field = Object.keys(err.keyPattern)[0];
+      const value = err.keyValue[field];
+      console.log("❌ Duplicate key error:", { field, value });
+
+      let errorMessage = `${field} already exists`;
+      if (field === "username") {
+        errorMessage = "Username already taken";
+      } else if (field === "email") {
+        errorMessage = "Email already in use";
+      }
+
       return res.status(409).json({
-        error: `${field} already exists`,
+        error: errorMessage,
         field: field,
+        value: value,
+      });
+    }
+
+    // Handle validation errors
+    if (err.name === "ValidationError") {
+      const validationErrors = Object.values(err.errors).map((e) => e.message);
+      return res.status(400).json({
+        error: "Validation failed",
+        details: validationErrors,
       });
     }
 
@@ -135,22 +191,27 @@ router.post("/create-admin", async (req, res) => {
       return res.status(403).json({ error: "Invalid admin secret" });
     }
 
-    const existingUser = await User.findOne({ email });
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
-      console.log("❌ Admin email already exists:", email);
+      console.log("❌ Admin email already exists:", normalizedEmail);
       return res.status(409).json({ error: "Email already in use" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const newAdmin = new User({
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
       role: "admin",
     });
 
     await newAdmin.save();
-    console.log("✅ Admin created successfully:", { id: newAdmin._id, email });
+    console.log("✅ Admin created successfully:", {
+      id: newAdmin._id,
+      email: normalizedEmail,
+    });
 
     res.status(201).json({ message: "Admin user created successfully" });
     console.log("=== CREATE ADMIN REQUEST END ===");
@@ -181,10 +242,12 @@ router.post("/signin", async (req, res) => {
       });
     }
 
-    console.log("🔍 Looking for user with email:", email);
-    const user = await User.findOne({ email });
+    const normalizedEmail = email.toLowerCase().trim();
+
+    console.log("🔍 Looking for user with email:", normalizedEmail);
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
-      console.log("❌ User not found:", email);
+      console.log("❌ User not found:", normalizedEmail);
       return res.status(404).json({ error: "User not found" });
     }
 
@@ -196,7 +259,7 @@ router.post("/signin", async (req, res) => {
     console.log("🔒 Comparing password...");
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      console.log("❌ Invalid password for user:", email);
+      console.log("❌ Invalid password for user:", normalizedEmail);
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
@@ -214,7 +277,7 @@ router.post("/signin", async (req, res) => {
 
     console.log("✅ User signed in successfully:", {
       id: user._id,
-      email,
+      email: normalizedEmail,
       role: user.role,
       username: user.username,
     });
@@ -252,9 +315,11 @@ router.post("/forgot-password", async (req, res) => {
       return res.status(400).json({ error: "Email is required" });
     }
 
-    const user = await User.findOne({ email });
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
-      console.log("❌ User not found for password reset:", email);
+      console.log("❌ User not found for password reset:", normalizedEmail);
       return res.status(404).json({ error: "User not found" });
     }
 
@@ -322,15 +387,43 @@ router.get("/check-username", async (req, res) => {
       return res.status(400).json({ error: "Username is required" });
     }
 
-    const exists = await User.findOne({ username });
-    const available = !exists;
+    // Normalize username
+    const normalizedUsername = username.toLowerCase().trim();
 
-    console.log("✅ Username check result:", { username, available });
+    // Validate username format
+    if (!/^[a-zA-Z0-9_]+$/.test(normalizedUsername)) {
+      console.log("❌ Invalid username format:", normalizedUsername);
+      return res.status(400).json({
+        error: "Username can only contain letters, numbers, and underscores",
+        available: false,
+      });
+    }
 
-    res.status(200).json({ available });
+    if (normalizedUsername.length < 3 || normalizedUsername.length > 30) {
+      console.log("❌ Username length invalid:", normalizedUsername);
+      return res.status(400).json({
+        error: "Username must be between 3 and 30 characters",
+        available: false,
+      });
+    }
+
+    const available = await User.isUsernameAvailable(normalizedUsername);
+
+    console.log("✅ Username check result:", {
+      username: normalizedUsername,
+      available,
+    });
+
+    res.status(200).json({
+      available,
+      username: normalizedUsername,
+    });
   } catch (err) {
     console.error("Username check error:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({
+      error: "Server error",
+      available: false,
+    });
   }
 });
 

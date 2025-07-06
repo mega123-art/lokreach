@@ -19,24 +19,63 @@ const SignUp = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
+  const [usernameError, setUsernameError] = useState("");
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-    if (e.target.name === "username") setUsernameAvailable(null);
+
+    // Reset username states when username changes
+    if (e.target.name === "username") {
+      setUsernameAvailable(null);
+      setUsernameError("");
+    }
+
     // Clear errors when user starts typing
     if (error) setError("");
+  };
+
+  const validateUsername = (username) => {
+    if (!username) return "Username is required";
+
+    const normalizedUsername = username.toLowerCase().trim();
+
+    if (normalizedUsername.length < 3) {
+      return "Username must be at least 3 characters long";
+    }
+
+    if (normalizedUsername.length > 30) {
+      return "Username must be less than 30 characters";
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(normalizedUsername)) {
+      return "Username can only contain letters, numbers, and underscores";
+    }
+
+    return null;
   };
 
   const checkUsername = async () => {
     if (!form.username || form.role !== "creator") return;
 
+    // Validate username format first
+    const validationError = validateUsername(form.username);
+    if (validationError) {
+      setUsernameError(validationError);
+      setUsernameAvailable(false);
+      return;
+    }
+
     setCheckingUsername(true);
+    setUsernameError("");
+
     try {
       console.log("Checking username availability:", form.username);
+      const normalizedUsername = form.username.toLowerCase().trim();
+
       const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/auth/check-username?value=${
-          form.username
-        }`,
+        `${
+          import.meta.env.VITE_API_URL
+        }/auth/check-username?value=${encodeURIComponent(normalizedUsername)}`,
         {
           timeout: 10000,
           headers: {
@@ -45,10 +84,18 @@ const SignUp = () => {
           },
         }
       );
+
       console.log("Username check result:", res.data);
       setUsernameAvailable(res.data.available);
+
+      if (!res.data.available) {
+        setUsernameError("Username is already taken");
+      }
     } catch (err) {
       console.error("Username check error:", err);
+      setUsernameError(
+        err.response?.data?.error || "Error checking username availability"
+      );
       setUsernameAvailable(false);
     } finally {
       setCheckingUsername(false);
@@ -72,8 +119,19 @@ const SignUp = () => {
       return "Contact email is required for creators";
     }
 
-    if (form.role === "creator" && usernameAvailable === false) {
-      return "Please choose a different username";
+    if (form.role === "creator") {
+      const usernameValidation = validateUsername(form.username);
+      if (usernameValidation) {
+        return usernameValidation;
+      }
+
+      if (usernameAvailable === false) {
+        return "Please choose a different username";
+      }
+
+      if (usernameAvailable === null && form.username) {
+        return "Please wait for username availability check";
+      }
     }
 
     // Email validation
@@ -106,12 +164,27 @@ const SignUp = () => {
     try {
       console.log("=== SIGNUP ATTEMPT ===");
       console.log("API URL:", import.meta.env.VITE_API_URL);
-      console.log("Form data:", { ...form, password: "[HIDDEN]" });
+
+      // Normalize form data before sending
+      const normalizedForm = {
+        ...form,
+        email: form.email.toLowerCase().trim(),
+        username:
+          form.role === "creator"
+            ? form.username.toLowerCase().trim()
+            : undefined,
+        contactEmail:
+          form.role === "creator"
+            ? form.contactEmail.toLowerCase().trim()
+            : undefined,
+      };
+
+      console.log("Form data:", { ...normalizedForm, password: "[HIDDEN]" });
 
       const apiUrl = `${import.meta.env.VITE_API_URL}/auth/signup`;
       console.log("Full URL:", apiUrl);
 
-      const response = await axios.post(apiUrl, form, {
+      const response = await axios.post(apiUrl, normalizedForm, {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
@@ -133,6 +206,7 @@ const SignUp = () => {
         contactEmail: "",
       });
       setUsernameAvailable(null);
+      setUsernameError("");
 
       setTimeout(() => {
         navigate("/signin");
@@ -151,8 +225,21 @@ const SignUp = () => {
       } else if (err.code === "ERR_NETWORK") {
         errorMessage = "Network error - unable to connect to server";
       } else if (err.response?.status === 409) {
-        errorMessage =
+        const responseError =
           err.response.data?.error || "Email or username already exists";
+        const field = err.response.data?.field;
+
+        if (field === "username") {
+          setUsernameError("Username is already taken");
+          setUsernameAvailable(false);
+          errorMessage =
+            "Username is already taken. Please choose a different one.";
+        } else if (field === "email") {
+          errorMessage =
+            "Email is already in use. Please use a different email address.";
+        } else {
+          errorMessage = responseError;
+        }
       } else if (err.response?.status === 400) {
         errorMessage =
           err.response.data?.error ||
@@ -262,8 +349,10 @@ const SignUp = () => {
                         value={form.username}
                         onChange={handleChange}
                         onBlur={checkUsername}
-                        className="form-input"
-                        placeholder="Choose a unique username"
+                        className={`form-input ${
+                          usernameError ? "border-red-300" : ""
+                        }`}
+                        placeholder="Choose a unique username (3-30 characters)"
                         required
                         disabled={isLoading}
                         pattern="[a-zA-Z0-9_]+"
@@ -275,12 +364,18 @@ const SignUp = () => {
                         </div>
                       )}
                     </div>
-                    {usernameAvailable === true && (
+
+                    {usernameError && (
+                      <p className="form-error">✗ {usernameError}</p>
+                    )}
+
+                    {!usernameError && usernameAvailable === true && (
                       <p className="form-success">✓ Username is available</p>
                     )}
-                    {usernameAvailable === false && (
-                      <p className="form-error">✗ Username is already taken</p>
-                    )}
+
+                    <p className="text-xs text-gray-500 mt-1">
+                      3-30 characters, letters, numbers, and underscores only
+                    </p>
                   </div>
 
                   <div className="form-group">
@@ -308,7 +403,9 @@ const SignUp = () => {
                 className="btn btn-primary btn-lg w-full"
                 disabled={
                   isLoading ||
-                  (form.role === "creator" && usernameAvailable === false)
+                  checkingUsername ||
+                  (form.role === "creator" &&
+                    (usernameAvailable === false || usernameError))
                 }
               >
                 {isLoading ? (
