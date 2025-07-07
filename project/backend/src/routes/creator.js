@@ -47,7 +47,7 @@ router.get("/profile/:id", async (req, res) => {
     const profile = await CreatorProfile.findOne({ user: creatorId });
 
     res.status(200).json({
-      contactEmail: user.contactEmail,
+      email: user.email,
       profile,
     });
   } catch (err) {
