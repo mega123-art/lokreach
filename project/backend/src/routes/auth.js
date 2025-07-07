@@ -184,14 +184,12 @@ router.post("/signup", async (req, res) => {
   try {
     console.log("=== SIGNUP REQUEST START ===");
     console.log("Request body:", { ...req.body, password: "[HIDDEN]" });
-    console.log("Request headers:", req.headers);
 
     const {
       email,
       password,
       role,
       username,
-      contactEmail,
       brandName,
       businessContact,
       businessNiche,
@@ -205,10 +203,8 @@ router.post("/signup", async (req, res) => {
 
     // Basic validation
     if (!email || !password || !role) {
-      console.log("❌ Validation failed: Missing required fields");
       return res.status(400).json({
         error: "Email, password, and role are required",
-        received: { email: !!email, password: !!password, role: !!role },
       });
     }
 
@@ -219,15 +215,14 @@ router.post("/signup", async (req, res) => {
     }
 
     if (!["creator", "brand", "admin"].includes(role)) {
-      console.log("❌ Validation failed: Invalid role:", role);
       return res.status(400).json({
         error: "Invalid role specified. Must be 'creator', 'brand', or 'admin'",
       });
     }
 
-    if (role === "creator" && (!username || !contactEmail)) {
+    if (role === "creator" && !username) {
       return res.status(400).json({
-        error: "Username and contact email are required for creators",
+        error: "Username is required for creators",
       });
     }
 
@@ -252,9 +247,6 @@ router.post("/signup", async (req, res) => {
     // Normalize inputs
     const normalizedEmail = email.toLowerCase().trim();
     const normalizedUsername = username ? username.toLowerCase().trim() : null;
-    const normalizedContactEmail = contactEmail
-      ? contactEmail.toLowerCase().trim()
-      : null;
     const normalizedInstaHandle = instaHandle
       ? instaHandle.toLowerCase().trim()
       : undefined;
@@ -309,7 +301,6 @@ router.post("/signup", async (req, res) => {
       password: hashedPassword,
       role,
       username: role === "creator" ? normalizedUsername : undefined,
-      contactEmail: role === "creator" ? normalizedContactEmail : undefined,
 
       // Creator-specific
       mobileNumber: role === "creator" ? mobileNumber?.trim() : undefined,
@@ -341,7 +332,6 @@ router.post("/signup", async (req, res) => {
     console.log("=== SIGNUP REQUEST END ===");
   } catch (err) {
     console.error("=== SIGNUP ERROR ===");
-    console.error("Error details:", err);
     if (err.code === 11000) {
       const field = Object.keys(err.keyPattern)[0];
       const value = err.keyValue[field];
@@ -370,7 +360,6 @@ router.post("/signup", async (req, res) => {
     });
   }
 });
-
 
 // POST /create-admin (temporary endpoint for creating admin)
 router.post("/create-admin", async (req, res) => {
