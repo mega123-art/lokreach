@@ -495,11 +495,11 @@ const SignUp = () => {
 
                     {/* Business Contact Info */}
                     <div className="space-y-1">
-                      <label className="block text-sm font-semibold text-[#50142c]">
+                      <label className="block text-sm font-semibold text-[#50142c] ">
                         Business Contact Info *
                       </label>
                       <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ">
                           <Phone className="h-4 w-4 text-gray-400" />
                         </div>
                         <input
@@ -507,7 +507,7 @@ const SignUp = () => {
                           name="businessContact"
                           value={form.businessContact}
                           onChange={handleChange}
-                          className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm"
+                          className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
                           placeholder="Phone number or contact email"
                           required
                           disabled={isLoading}
@@ -529,7 +529,7 @@ const SignUp = () => {
                           name="niche"
                           value={form.niche}
                           onChange={handleChange}
-                          className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 text-sm appearance-none bg-white"
+                          className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 text-sm appearance-none bg-white t8"
                           required
                           disabled={isLoading}
                         >
@@ -660,7 +660,7 @@ const SignUp = () => {
                           name="instagramHandle"
                           value={form.instagramHandle}
                           onChange={handleChange}
-                          className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm"
+                          className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
                           placeholder="@your_brand_instagram"
                           disabled={isLoading}
                         />
@@ -681,7 +681,7 @@ const SignUp = () => {
                           name="website"
                           value={form.website}
                           onChange={handleChange}
-                          className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm"
+                          className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
                           placeholder="https://your-website.com"
                           disabled={isLoading}
                         />
