@@ -8,7 +8,7 @@ const { authenticate, authorizeRoles } = require("../middleware/auth");
 router.get("/all", authenticate, authorizeRoles("brand"), async (req, res) => {
   try {
     const profiles = await CreatorProfile.find()
-      .populate("user", "username contactEmail")
+      .populate("user", "username")
       .sort({ createdAt: -1 });
 
     res.status(200).json({ creators: profiles });
@@ -26,7 +26,7 @@ router.get("/", authenticate, authorizeRoles("brand"), async (req, res) => {
     if (!city) return res.status(400).json({ error: "City is required" });
 
     const profiles = await CreatorProfile.find({ location: city })
-      .populate("user", "username contactEmail")
+      .populate("user", "username")
       .exec();
 
     res.status(200).json({ creators: profiles });
@@ -47,7 +47,7 @@ router.get("/profile/:id", async (req, res) => {
     const profile = await CreatorProfile.findOne({ user: creatorId });
 
     res.status(200).json({
-      contactEmail: user.contactEmail,
+      email: user.email,
       profile,
     });
   } catch (err) {

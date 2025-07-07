@@ -19,6 +19,61 @@ const userSchema = new mongoose.Schema(
       enum: ["creator", "brand", "admin"],
       required: true,
     },
+    brandName: {
+      type: String,
+      trim: true,
+      required: true,
+    },
+
+    businessContact: {
+      type: String,
+      trim: true,
+      required: true,
+    },
+
+    businessNiche: {
+      type: String,
+      trim: true,
+      required: true,
+    },
+
+    instaHandle: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      required: true,
+    },
+
+    website: {
+      type: String,
+      trim: true,
+      lowercase: true,
+    },
+
+    mobileNumber: {
+      type: String,
+      trim: true,
+      required: true,
+    },
+
+    country: {
+      type: String,
+      trim: true,
+      required: true,
+    },
+
+    state: {
+      type: String,
+      trim: true,
+      required: true,
+    },
+
+    city: {
+      type: String,
+      trim: true,
+      required: true,
+    },
+
     username: {
       type: String,
       unique: true,
@@ -34,11 +89,7 @@ const userSchema = new mongoose.Schema(
         message: "Username can only contain letters, numbers, and underscores",
       },
     },
-    contactEmail: {
-      type: String,
-      trim: true,
-      lowercase: true,
-    },
+    
     resetToken: String,
     resetTokenExpiry: Date,
   },
@@ -62,9 +113,18 @@ userSchema.pre("save", function (next) {
   }
 
   // Normalize contact email
-  if (this.contactEmail) {
-    this.contactEmail = this.contactEmail.toLowerCase().trim();
-  }
+
+  if (this.businessContact) this.businessContact = this.businessContact.trim();
+  if (this.brandName) this.brandName = this.brandName.trim();
+  if (this.businessNiche) this.businessNiche = this.businessNiche.trim();
+  if (this.instaHandle)
+    this.instaHandle = this.instaHandle.toLowerCase().trim();
+  if (this.website) this.website = this.website.toLowerCase().trim();
+
+  if (this.mobileNumber) this.mobileNumber = this.mobileNumber.trim();
+  if (this.country) this.country = this.country.trim();
+  if (this.state) this.state = this.state.trim();
+  if (this.city) this.city = this.city.trim();
 
   next();
 });

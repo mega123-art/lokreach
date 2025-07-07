@@ -85,7 +85,7 @@ router.get("/brand/:brandId", authenticate, authorizeRoles("brand"), async (req,
     }
 
     const campaigns = await Campaign.find({ brand: brandId })
-      .populate("starredCreators", "username contactEmail")
+      .populate("starredCreators", "username")
       .sort({ createdAt: -1 });
 
     res.status(200).json({ campaigns });
@@ -131,7 +131,7 @@ router.get("/:id/starred", authenticate, authorizeRoles("brand"), async (req, re
   try {
     const campaign = await Campaign.findById(req.params.id).populate({
       path: "starredCreators",
-      select: "username contactEmail",
+      select: "username ",
     });
 
     if (!campaign) return res.status(404).json({ error: "Campaign not found" });
@@ -144,7 +144,7 @@ router.get("/:id/starred", authenticate, authorizeRoles("brand"), async (req, re
     const creatorIds = campaign.starredCreators.map((c) => c._id);
     const profiles = await CreatorProfile.find({
       user: { $in: creatorIds },
-    }).populate("user", "username contactEmail");
+    }).populate("user");
 
     res.status(200).json({ starred: profiles });
   } catch (err) {

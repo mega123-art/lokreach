@@ -13,92 +13,114 @@ router.use((req, res, next) => {
   next();
 });
 
+
 // POST /signup
+
 router.post("/signup", async (req, res) => {
   try {
     console.log("=== SIGNUP REQUEST START ===");
     console.log("Request body:", { ...req.body, password: "[HIDDEN]" });
-    console.log("Request headers:", req.headers);
 
-    const { email, password, role, username, contactEmail } = req.body;
+    const {
+      email,
+      password,
+      role,
+      username,
+      brandName,
+      businessContact,
+      businessNiche,
+      instaHandle,
+      website,
+      mobileNumber,
+      country,
+      state,
+      city,
+    } = req.body;
 
-    // Enhanced validation
+    // Basic validation
     if (!email || !password || !role) {
-      console.log("❌ Validation failed: Missing required fields");
       return res.status(400).json({
         error: "Email, password, and role are required",
-        received: { email: !!email, password: !!password, role: !!role },
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        error: "Password must be at least 6 characters long",
       });
     }
 
     if (!["creator", "brand", "admin"].includes(role)) {
-      console.log("❌ Validation failed: Invalid role:", role);
       return res.status(400).json({
         error: "Invalid role specified. Must be 'creator', 'brand', or 'admin'",
       });
     }
 
     if (role === "creator" && !username) {
-      console.log("❌ Validation failed: Username required for creator");
       return res.status(400).json({
         error: "Username is required for creators",
       });
     }
 
-    if (role === "creator" && !contactEmail) {
-      console.log("❌ Validation failed: Contact email required for creator");
-      return res.status(400).json({
-        error: "Contact email is required for creators",
-      });
+    if (role === "creator") {
+      if (!mobileNumber || !instaHandle || !country || !state || !city) {
+        return res.status(400).json({
+          error: "Missing required fields for creator",
+          required: ["mobileNumber", "instaHandle", "country", "state", "city"],
+        });
+      }
+    }
+
+    if (role === "brand") {
+      if (!brandName || !businessContact || !businessNiche) {
+        return res.status(400).json({
+          error: "Missing required fields for brand",
+          required: ["brandName", "businessContact", "businessNiche"],
+        });
+      }
     }
 
     // Normalize inputs
     const normalizedEmail = email.toLowerCase().trim();
     const normalizedUsername = username ? username.toLowerCase().trim() : null;
-    const normalizedContactEmail = contactEmail
-      ? contactEmail.toLowerCase().trim()
-      : null;
+    const normalizedInstaHandle = instaHandle
+      ? instaHandle.toLowerCase().trim()
+      : undefined;
+    const normalizedWebsite = website
+      ? website.toLowerCase().trim()
+      : undefined;
+    const normalizedBusinessContact = businessContact
+      ? businessContact.trim()
+      : undefined;
 
-    // Validate username format for creators
+    // Username validation for creators
     if (role === "creator" && normalizedUsername) {
       if (!/^[a-zA-Z0-9_]+$/.test(normalizedUsername)) {
-        console.log(
-          "❌ Validation failed: Invalid username format:",
-          normalizedUsername
-        );
         return res.status(400).json({
           error: "Username can only contain letters, numbers, and underscores",
         });
       }
 
       if (normalizedUsername.length < 3 || normalizedUsername.length > 30) {
-        console.log(
-          "❌ Validation failed: Username length invalid:",
-          normalizedUsername
-        );
         return res.status(400).json({
           error: "Username must be between 3 and 30 characters",
         });
       }
     }
 
-    // Check if email already exists
-    console.log("🔍 Checking if email exists:", normalizedEmail);
+    // Email uniqueness check
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
-      console.log("❌ Email already exists:", normalizedEmail);
       return res.status(409).json({
         error: "Email already in use",
         field: "email",
       });
     }
 
-    // Check username uniqueness for creators
+    // Username uniqueness for creators
     if (role === "creator" && normalizedUsername) {
-      console.log("🔍 Checking if username exists:", normalizedUsername);
       const isAvailable = await User.isUsernameAvailable(normalizedUsername);
       if (!isAvailable) {
-        console.log("❌ Username already exists:", normalizedUsername);
         return res.status(409).json({
           error: "Username already taken",
           field: "username",
@@ -106,26 +128,32 @@ router.post("/signup", async (req, res) => {
       }
     }
 
-    console.log("🔒 Hashing password...");
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    console.log("👤 Creating new user...");
+    // Create new user
     const newUser = new User({
       email: normalizedEmail,
       password: hashedPassword,
       role,
       username: role === "creator" ? normalizedUsername : undefined,
-      contactEmail: role === "creator" ? normalizedContactEmail : undefined,
+
+      // Creator-specific
+      mobileNumber: role === "creator" ? mobileNumber?.trim() : undefined,
+      instaHandle: role === "creator" ? normalizedInstaHandle : undefined,
+      country: role === "creator" ? country?.trim() : undefined,
+      state: role === "creator" ? state?.trim() : undefined,
+      city: role === "creator" ? city?.trim() : undefined,
+
+      // Brand-specific
+      brandName: role === "brand" ? brandName?.trim() : undefined,
+      businessContact: role === "brand" ? normalizedBusinessContact : undefined,
+      businessNiche: role === "brand" ? businessNiche?.trim() : undefined,
+      instaHandle: role === "brand" ? normalizedInstaHandle : undefined,
+      website: role === "brand" ? normalizedWebsite : undefined,
     });
 
     await newUser.save();
-
-    console.log("✅ User created successfully:", {
-      id: newUser._id,
-      email: normalizedEmail,
-      role,
-      username: newUser.username,
-    });
 
     res.status(201).json({
       message: "User registered successfully",
@@ -136,34 +164,24 @@ router.post("/signup", async (req, res) => {
         username: newUser.username,
       },
     });
-
+    console.log("✅ User created:", newUser._id);
     console.log("=== SIGNUP REQUEST END ===");
   } catch (err) {
     console.error("=== SIGNUP ERROR ===");
-    console.error("Error details:", err);
-    console.error("Stack trace:", err.stack);
-
-    // Handle specific MongoDB errors
     if (err.code === 11000) {
       const field = Object.keys(err.keyPattern)[0];
       const value = err.keyValue[field];
-      console.log("❌ Duplicate key error:", { field, value });
-
       let errorMessage = `${field} already exists`;
-      if (field === "username") {
-        errorMessage = "Username already taken";
-      } else if (field === "email") {
-        errorMessage = "Email already in use";
-      }
+      if (field === "username") errorMessage = "Username already taken";
+      if (field === "email") errorMessage = "Email already in use";
 
       return res.status(409).json({
         error: errorMessage,
-        field: field,
-        value: value,
+        field,
+        value,
       });
     }
 
-    // Handle validation errors
     if (err.name === "ValidationError") {
       const validationErrors = Object.values(err.errors).map((e) => e.message);
       return res.status(400).json({
