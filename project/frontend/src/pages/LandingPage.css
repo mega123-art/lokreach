@@ -746,3 +746,32 @@ nav{
     height: 180px;
   }
 }
+
+.t1{
+  padding-top: 0
+  ;
+}
+
+.feature-card{
+  margin-bottom:45px;
+}
+
+.t2{
+  padding-top: 40px;
+  padding-bottom: 25px;
+}
+
+.t3{
+  padding-top: 30px;
+  
+}
+
+.t4{
+  padding-bottom: 15px;
+}
+#contact {
+  scroll-margin-top: 70px; /* adjust as per navbar height */
+}
+#about {
+  scroll-margin-top: 50px; /* adjust as per navbar height */
+}
