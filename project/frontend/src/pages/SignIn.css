@@ -13,3 +13,7 @@
 .t11{
     color: aliceblue;
 }
+.t12{
+    display: flex;
+    flex-direction: row;
+}
