@@ -330,7 +330,7 @@ const LandingPage = () => {
               <h1 className="hero-text-large hero-text-red">Marketplace</h1>
               <h1 className="hero-text-large">Where</h1>
             </div>
-            <div className="hero-text-container">
+            <div className="hero-text-container t1">
               <h1 className="hero-text-large hero-text-red">Influence</h1>
               <h1 className="hero-text-large">Meets</h1>
               <h1 className="hero-text-large hero-text-red">Local</h1>
@@ -375,7 +375,7 @@ const LandingPage = () => {
       <section id="features" className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4 t2">
               Why Choose <span className="text-[#d20054]">LocoLab</span>?
             </h2>
           </div>
@@ -510,10 +510,10 @@ const LandingPage = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4 t3">
                 Get In Touch
               </h2>
-              <p className="text-lg text-gray-600">
+              <p className="text-lg text-gray-600 t4">
                 Have questions? We'd love to hear from you. Send us a message
                 and we'll respond as soon as possible.
               </p>

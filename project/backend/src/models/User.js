@@ -89,11 +89,7 @@ const userSchema = new mongoose.Schema(
         message: "Username can only contain letters, numbers, and underscores",
       },
     },
-    contactEmail: {
-      type: String,
-      trim: true,
-      lowercase: true,
-    },
+    
     resetToken: String,
     resetTokenExpiry: Date,
   },
@@ -117,9 +113,7 @@ userSchema.pre("save", function (next) {
   }
 
   // Normalize contact email
-  if (this.contactEmail) {
-    this.contactEmail = this.contactEmail.toLowerCase().trim();
-  }
+
   if (this.businessContact) this.businessContact = this.businessContact.trim();
   if (this.brandName) this.brandName = this.brandName.trim();
   if (this.businessNiche) this.businessNiche = this.businessNiche.trim();

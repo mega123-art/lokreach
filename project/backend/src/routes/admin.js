@@ -71,7 +71,7 @@ router.get(
     try {
       const profiles = await CreatorProfile.find().populate(
         "user",
-        "email username contactEmail"
+        "email username"
       );
 
       res.status(200).json({ fulfilledCreators: profiles });
