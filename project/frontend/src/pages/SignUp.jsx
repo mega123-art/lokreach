@@ -281,7 +281,7 @@ const SignUp = () => {
             </div>
 
             {/* Three Column Layout for Form Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 t12">
               {/* Column 1 - Account Info */}
               <div className="space-y-4 bg-gradient-to-b from-gray-50/50 to-white/50 p-4 rounded-lg border border-gray-200">
                 <h3 className="text-lg font-semibold text-[#50142c] border-b-2 border-[#d20054] pb-2">Account Information</h3>
