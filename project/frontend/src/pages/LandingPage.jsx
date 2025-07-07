@@ -283,7 +283,6 @@
 // };
 
 // export default LandingPage;
-
 import { Link } from "react-router-dom";
 import "./LandingPage.css";
 
@@ -372,7 +371,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Features Section - UPDATED WITH FLEX CONTAINER */}
       <section id="features" className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -381,7 +380,8 @@ const LandingPage = () => {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-7xl mx-auto">
+          {/* CHANGED TO USE FLEX CONTAINER */}
+          <div className="features-container">
             <div className="feature-card">
               <div className="feature-icon">
                 <svg
