@@ -124,32 +124,30 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* About Us Section */}
-      <section id="about" className="about-section py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="about-content">
-              <h2 className="about-title">
-                About <span className="highlight">LocoLab</span>
-              </h2>
-              <p className="about-description">
-                LocoLab revolutionizes how brands connect with local content creators across India. We democratize influencer marketing by connecting brands with authentic local voices, empowering creators to monetize their influence while helping brands reach target audiences with genuine, location-specific content.
-              </p>
+      {/* About Us Section - Fixed Structure */}
+      <section id="about" className="about-section">
+        <div className="about-container">
+          <div className="about-content">
+            <h2 className="about-title">
+              About <span className="highlight">LocoLab</span>
+            </h2>
+            <p className="about-description">
+              LocoLab revolutionizes how brands connect with local content creators across India. We democratize influencer marketing by connecting brands with authentic local voices, empowering creators to monetize their influence while helping brands reach target audiences with genuine, location-specific content.
+            </p>
+            
+            <div className="about-grid">
+              <div className="about-item">
+                <h3 className="about-item-title">Our Mission</h3>
+                <p className="about-item-text">
+                  To democratize influencer marketing through authentic local connections, data-driven partnerships, and transparent collaboration.
+                </p>
+              </div>
               
-              <div className="about-grid">
-                <div className="about-item">
-                  <h3 className="about-item-title">Our Mission</h3>
-                  <p className="about-item-text">
-                    To democratize influencer marketing through authentic local connections, data-driven partnerships, and transparent collaboration.
-                  </p>
-                </div>
-                
-                <div className="about-item">
-                  <h3 className="about-item-title">Our Vision</h3>
-                  <p className="about-item-text">
-                    To become India's leading platform for local influencer marketing with a nationwide creator network and AI-powered matching.
-                  </p>
-                </div>
+              <div className="about-item">
+                <h3 className="about-item-title">Our Vision</h3>
+                <p className="about-item-text">
+                  To become India's leading platform for local influencer marketing with a nationwide creator network and AI-powered matching.
+                </p>
               </div>
             </div>
           </div>
