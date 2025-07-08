@@ -1810,7 +1810,6 @@
 // export default SignUp;
 
 
-
 import React, { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, Phone, Instagram, User, MapPin, Globe, Check } from 'lucide-react';
 import './SignIn.css';
@@ -1828,9 +1827,10 @@ const SignUp = () => {
     city: "",
     brandName: "",
     businessContact: "",
-    niche: "lifestyle", // Default niche to reduce validation failures
+    niche: "",
     website: "",
-    acceptTerms: false
+    acceptTerms: false,
+    username: "", // Added to match backend schema
   });
 
   const [error, setError] = useState("");
@@ -1850,8 +1850,9 @@ const SignUp = () => {
   };
 
   const validateForm = () => {
+    console.log("Validating form with data:", { ...form, password: "[HIDDEN]", confirmPassword: "[HIDDEN]" });
     const baseFields = ['email', 'password', 'confirmPassword'];
-    const creatorFields = ['mobileNumber', 'instagramHandle', 'country', 'state', 'city', 'niche'];
+    const creatorFields = ['mobileNumber', 'instagramHandle', 'country', 'state', 'city', 'username'];
     const brandFields = ['brandName', 'businessContact', 'niche'];
     
     const requiredFields = form.role === 'creator' 
@@ -1861,64 +1862,70 @@ const SignUp = () => {
     const missingFields = requiredFields.filter(field => !form[field]);
     
     if (missingFields.length > 0) {
-      if (missingFields.includes('niche')) {
-        return `Please select a ${form.role === 'creator' ? 'content' : 'business'} niche`;
-      }
+      console.log("Missing fields:", missingFields);
       return "Please fill in all required fields";
     }
 
     if (form.password.length < 6) {
+      console.log("Password too short");
       return "Password must be at least 6 characters long";
     }
 
     if (form.password !== form.confirmPassword) {
+      console.log("Passwords do not match");
       return "Passwords do not match";
     }
 
     if (!form.acceptTerms) {
+      console.log("Terms not accepted");
       return "Please accept the terms and conditions";
     }
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(form.email)) {
+      console.log("Invalid email:", form.email);
       return "Please enter a valid email address";
     }
 
-    // Role-specific validations
     if (form.role === 'creator') {
-      // Mobile number validation
       const mobileRegex = /^[+]?[\d\s\-\(\)]{10,}$/;
       if (!mobileRegex.test(form.mobileNumber)) {
+        console.log("Invalid mobile number:", form.mobileNumber);
         return "Please enter a valid mobile number";
       }
 
-      // Instagram handle validation
       const instagramRegex = /^@?[a-zA-Z0-9._]{1,30}$/;
       if (!instagramRegex.test(form.instagramHandle)) {
+        console.log("Invalid Instagram handle:", form.instagramHandle);
         return "Please enter a valid Instagram handle (letters, numbers, periods, underscores)";
       }
 
-      // Country validation
+      const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
+      if (!usernameRegex.test(form.username)) {
+        console.log("Invalid username:", form.username);
+        return "Username must be 3-30 characters and contain only letters, numbers, or underscores";
+      }
+
       const validCountries = ['US', 'CA', 'UK', 'AU', 'IN', 'DE', 'FR', 'ES', 'IT', 'JP', 'KR', 'BR', 'MX', 'AR', 'CL', 'OTHER'];
       if (!validCountries.includes(form.country)) {
+        console.log("Invalid country:", form.country);
         return "Please select a valid country";
       }
 
-      // State validation
       const stateRegex = /^[a-zA-Z\s]{2,}$/;
       if (!stateRegex.test(form.state)) {
+        console.log("Invalid state:", form.state);
         return "Please enter a valid state/province";
       }
     } else {
-      // Business contact validation for brand
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      const phoneRegex = /^[+]?[\d\s\-\(\)]{10,}$/;
-      if (!emailRegex.test(form.businessContact) && !phoneRegex.test(form.businessContact)) {
+      const contactRegex = /^([^\s@]+@[^\s@]+\.[^\s@]+|[+]?[\d\s\-\(\)]{10,})$/;
+      if (!contactRegex.test(form.businessContact)) {
+        console.log("Invalid business contact:", form.businessContact);
         return "Please enter a valid email or phone number for business contact";
       }
     }
 
+    console.log("Validation passed");
     return null;
   };
 
@@ -1929,41 +1936,64 @@ const SignUp = () => {
 
     const validationError = validateForm();
     if (validationError) {
+      console.log("Validation failed:", validationError);
       setError(validationError);
       return;
     }
 
     setIsLoading(true);
-
     const timeout = setTimeout(() => {
       setIsLoading(false);
       setError("Request timed out. Please try again.");
     }, 10000);
 
     try {
-      // Placeholder for real API call
-      // const response = await fetch('/api/signup', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     ...form,
-      //     instagramHandle: form.instagramHandle.startsWith('@') 
-      //       ? form.instagramHandle 
-      //       : `@${form.instagramHandle}`
-      //   })
-      // });
-      // if (!response.ok) {
-      //   const errorData = await response.json();
-      //   throw new Error(errorData.message || 'Signup failed');
-      // }
+      // Prepare payload, mapping to backend schema
+      const payload = {
+        email: form.email,
+        password: form.password,
+        role: form.role,
+        username: form.role === 'creator' ? form.username : undefined,
+        // Creator-specific fields
+        mobileNumber: form.role === 'creator' ? form.mobileNumber : undefined,
+        instaHandle: form.instagramHandle && !form.instagramHandle.startsWith('@')
+          ? `@${form.instagramHandle}`
+          : form.instagramHandle || undefined,
+        country: form.role === 'creator' ? form.country : undefined,
+        state: form.role === 'creator' ? form.state : undefined,
+        city: form.role === 'creator' ? form.city : undefined,
+        // Brand-specific fields
+        brandName: form.role === 'brand' ? form.brandName : undefined,
+        businessContact: form.role === 'brand' ? form.businessContact : undefined,
+        businessNiche: form.role === 'brand' ? form.niche : undefined,
+        website: form.role === 'brand' ? form.website : undefined,
+      };
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      console.log("Signup successful:", { ...form, password: "[HIDDEN]", confirmPassword: "[HIDDEN]" });
-      
+      console.log("Submitting to API:", { ...payload, password: "[HIDDEN]" });
+
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api/auth/signup';
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const responseData = await response.json();
+      console.log("API response:", responseData);
+
+      if (!response.ok) {
+        if (response.status === 400) {
+          throw new Error(responseData.error || "Invalid data provided. Please check your inputs.");
+        } else if (response.status === 409) {
+          throw new Error(responseData.error || "Email or username already in use.");
+        } else if (response.status === 500) {
+          throw new Error(responseData.error || "Server error. Please try again later.");
+        } else {
+          throw new Error(responseData.error || "Signup failed. Please try again.");
+        }
+      }
+
       setSuccess("Account created successfully! Welcome to LocoLab!");
-      
       setForm({
         role: "creator",
         email: "",
@@ -1976,14 +2006,15 @@ const SignUp = () => {
         city: "",
         brandName: "",
         businessContact: "",
-        niche: "lifestyle",
+        niche: "",
         website: "",
-        acceptTerms: false
+        acceptTerms: false,
+        username: "",
       });
       
     } catch (err) {
-      console.error("Signup error:", err);
-      setError(err.message || "An error occurred during signup");
+      console.error("Signup error:", err.message);
+      setError(err.message || "An error occurred during signup. Please try again.");
     } finally {
       clearTimeout(timeout);
       setIsLoading(false);
@@ -2026,10 +2057,8 @@ const SignUp = () => {
         <div className="absolute bottom-40 right-40 w-6 h-1.5 bg-white animate-spin" style={{animationDuration: '1.5s', animationDirection: 'reverse'}}></div>
         <div className="absolute bottom-40 right-40 w-1.5 h-6 bg-white animate-spin" style={{animationDuration: '1.5s', animationDirection: 'reverse'}}></div>
       </div>
-
       <div className="absolute inset-0 bg-gradient-to-br from-[#50142c] via-transparent to-[#50142c] opacity-40"></div>
       <div className="absolute inset-0 bg-gradient-radial from-transparent via-[#50142c]/20 to-[#50142c]/40"></div>
-
       <div className="relative z-10 w-full max-w-4xl">
         <div className="bg-gradient-to-br from-white/95 to-gray-50/95 rounded-xl shadow-2xl p-8 border border-gray-200 backdrop-blur-lg">
           <div className="text-center mb-8 bg-gradient-to-r from-[#50142c] to-[#d20054] rounded-lg p-6 shadow-lg">
@@ -2038,19 +2067,16 @@ const SignUp = () => {
             </h1>
             <p className="text-gray-100 t11">Create your account and start connecting</p>
           </div>
-
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-600 text-sm">{error}</p>
             </div>
           )}
-
           {success && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-green-600 text-sm">{success}</p>
             </div>
           )}
-
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-[#50142c]">
@@ -2085,7 +2111,6 @@ const SignUp = () => {
                     </div>
                   </div>
                 </label>
-                
                 <label className={`relative cursor-pointer rounded-lg border-2 p-4 transition-all duration-200 ${
                   form.role === 'brand' 
                     ? 'border-[#d20054] bg-gradient-to-br from-[#d20054]/10 to-[#50142c]/5 shadow-md' 
@@ -2116,11 +2141,9 @@ const SignUp = () => {
                 </label>
               </div>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 t12">
               <div className="space-y-4 bg-gradient-to-b from-gray-50/50 to-white/50 p-4 rounded-lg border border-gray-200">
                 <h3 className="text-lg font-semibold text-[#50142c] border-b-2 border-[#d20054] pb-2">Account Information</h3>
-                
                 <div className="space-y-1">
                   <label className="block text-sm font-semibold text-[#50142c]">
                     Email Address *
@@ -2141,7 +2164,6 @@ const SignUp = () => {
                     />
                   </div>
                 </div>
-
                 <div className="space-y-1">
                   <label className="block text-sm font-semibold text-[#50142c]">
                     Password *
@@ -2173,7 +2195,6 @@ const SignUp = () => {
                     </button>
                   </div>
                 </div>
-
                 <div className="space-y-1">
                   <label className="block text-sm font-semibold text-[#50142c]">
                     Confirm Password *
@@ -2205,13 +2226,33 @@ const SignUp = () => {
                     </button>
                   </div>
                 </div>
+                {form.role === 'creator' && (
+                  <div className="space-y-1">
+                    <label className="block text-sm font-semibold text-[#50142c]">
+                      Username *
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <User className="h-4 w-4 text-gray-400 t9" />
+                      </div>
+                      <input
+                        type="text"
+                        name="username"
+                        value={form.username}
+                        onChange={handleChange}
+                        className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
+                        placeholder="Enter your username"
+                        required
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
-
               <div className="space-y-4 bg-gradient-to-b from-gray-50/50 to-white/50 p-4 rounded-lg border border-gray-200">
                 <h3 className="text-lg font-semibold text-[#50142c] border-b-2 border-[#d20054] pb-2">
                   {form.role === 'creator' ? 'Contact Information' : 'Business Information'}
                 </h3>
-                
                 {form.role === 'creator' ? (
                   <>
                     <div className="space-y-1">
@@ -2234,14 +2275,13 @@ const SignUp = () => {
                         />
                       </div>
                     </div>
-
                     <div className="space-y-1">
                       <label className="block text-sm font-semibold text-[#50142c]">
                         Instagram Handle *
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Instagram className="h-4 w-4 text-gray-400 t9" />
+                          <Instagram className="h-4 w-4 text-gray-400 t9" />
                         </div>
                         <input
                           type="text"
@@ -2255,7 +2295,6 @@ const SignUp = () => {
                         />
                       </div>
                     </div>
-
                     <div className="space-y-1">
                       <label className="block text-sm font-semibold text-[#50142c]">
                         Content Niche *
@@ -2272,6 +2311,7 @@ const SignUp = () => {
                           required
                           disabled={isLoading}
                         >
+                          <option value="">Select your content niche</option>
                           <option value="fashion">Fashion & Beauty</option>
                           <option value="fitness">Fitness & Health</option>
                           <option value="food">Food & Beverage</option>
@@ -2317,7 +2357,6 @@ const SignUp = () => {
                         />
                       </div>
                     </div>
-
                     <div className="space-y-1">
                       <label className="block text-sm font-semibold text-[#50142c]">
                         Business Contact Info *
@@ -2338,14 +2377,13 @@ const SignUp = () => {
                         />
                       </div>
                     </div>
-
                     <div className="space-y-1">
                       <label className="block text-sm font-semibold text-[#50142c]">
                         Business Niche *
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Globe className="h-4 w-4 text-gray-400 t9" />
+                          <Globe className="h-4 w-4 text-gray-400 t9" />
                         </div>
                         <select
                           name="niche"
@@ -2355,6 +2393,7 @@ const SignUp = () => {
                           required
                           disabled={isLoading}
                         >
+                          <option value="">Select your business niche</option>
                           <option value="fashion">Fashion & Beauty</option>
                           <option value="fitness">Fitness & Health</option>
                           <option value="food">Food & Beverage</option>
@@ -2374,12 +2413,10 @@ const SignUp = () => {
                   </>
                 )}
               </div>
-
               <div className="space-y-4 bg-gradient-to-b from-gray-50/50 to-white/50 p-4 rounded-lg border border-gray-200">
                 <h3 className="text-lg font-semibold text-[#50142c] border-b-2 border-[#d20054] pb-2">
                   {form.role === 'creator' ? 'Location Details' : 'Additional Information'}
                 </h3>
-                
                 {form.role === 'creator' ? (
                   <>
                     <div className="space-y-1">
@@ -2418,7 +2455,6 @@ const SignUp = () => {
                         </select>
                       </div>
                     </div>
-
                     <div className="space-y-1">
                       <label className="block text-sm font-semibold text-[#50142c]">
                         State/Province *
@@ -2439,7 +2475,6 @@ const SignUp = () => {
                         />
                       </div>
                     </div>
-
                     <div className="space-y-1">
                       <label className="block text-sm font-semibold text-[#50142c]">
                         City *
@@ -2482,7 +2517,6 @@ const SignUp = () => {
                         />
                       </div>
                     </div>
-
                     <div className="space-y-1">
                       <label className="block text-sm font-semibold text-[#50142c]">
                         Website (Optional)
@@ -2506,7 +2540,6 @@ const SignUp = () => {
                 )}
               </div>
             </div>
-
             <div className="mt-6">
               <div className="space-y-3 pt-4 bg-gradient-to-r from-[#50142c]/5 to-[#d20054]/5 p-4 rounded-lg border border-[#d20054]/20">
                 <label className="flex items-start space-x-3 cursor-pointer">
@@ -2517,6 +2550,7 @@ const SignUp = () => {
                       checked={form.acceptTerms}
                       onChange={handleChange}
                       className="sr-only"
+                      required
                       disabled={isLoading}
                     />
                     <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
@@ -2547,7 +2581,6 @@ const SignUp = () => {
                 </label>
               </div>
             </div>
-
             <div className="pt-6 border-t-2 border-[#d20054]/20">
               <button
                 type="submit"
@@ -2565,7 +2598,6 @@ const SignUp = () => {
               </button>
             </div>
           </form>
-
           <div className="mt-6 pt-6 border-t-2 border-[#d20054]/20 text-center bg-gradient-to-r from-gray-50/50 to-white/50 rounded-lg p-4">
             <p className="text-sm text-[#50142c]">
               Already have an account?{" "}
@@ -2579,7 +2611,6 @@ const SignUp = () => {
           </div>
         </div>
       </div>
-
       <style jsx>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px) rotate(0deg); }
@@ -2587,7 +2618,6 @@ const SignUp = () => {
           50% { transform: translateY(-60px) rotate(180deg); }
           75% { transform: translateY(-30px) rotate(270deg); }
         }
-        
         @keyframes drift {
           0% { transform: translateX(0px) translateY(0px); }
           25% { transform: translateX(20px) translateY(-10px); }
@@ -2595,7 +2625,6 @@ const SignUp = () => {
           75% { transform: translateX(-20px) translateY(-10px); }
           100% { transform: translateX(0px) translateY(0px); }
         }
-
         @keyframes zigzag {
           0% { transform: translateX(0px) translateY(0px); }
           25% { transform: translateX(30px) translateY(-20px); }
