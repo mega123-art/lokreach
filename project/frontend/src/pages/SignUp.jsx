@@ -1971,7 +1971,7 @@ const SignUp = () => {
 
       console.log("Submitting to API:", { ...payload, password: "[HIDDEN]" });
 
-      const API_URL = process.env.VITE_API_URL || 'http://localhost:5000/api/auth/signup';
+      const API_URL = `${process.env.VITE_API_URL}/auth/signup` || 'http://localhost:5000/api/auth/signup';
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
