@@ -19,13 +19,12 @@ router.use((req, res, next) => {
 router.post("/signup", async (req, res) => {
   try {
     console.log("=== SIGNUP REQUEST START ===");
-    console.log("Request body:", { ...req.body, password: "[HIDDEN]" });
 
     const {
       email,
       password,
       role,
-      username,
+      username, // for creator only
       brandName,
       businessContact,
       businessNiche,
@@ -37,7 +36,7 @@ router.post("/signup", async (req, res) => {
       city,
     } = req.body;
 
-    // Basic validation
+    // === Basic required checks ===
     if (!email || !password || !role) {
       return res.status(400).json({
         error: "Email, password, and role are required",
@@ -56,17 +55,43 @@ router.post("/signup", async (req, res) => {
       });
     }
 
-    if (role === "creator" && !username) {
-      return res.status(400).json({
-        error: "Username is required for creators",
-      });
-    }
-
+    // === Role-based required fields ===
     if (role === "creator") {
+      if (!username) {
+        return res.status(400).json({
+          error: "Username is required for creators",
+        });
+      }
+
       if (!mobileNumber || !instaHandle || !country || !state || !city) {
         return res.status(400).json({
           error: "Missing required fields for creator",
           required: ["mobileNumber", "instaHandle", "country", "state", "city"],
+        });
+      }
+
+      // Validate username format
+      const normalizedUsername = username.toLowerCase().trim();
+      if (!/^[a-zA-Z0-9_]+$/.test(normalizedUsername)) {
+        return res.status(400).json({
+          error: "Username can only contain letters, numbers, and underscores",
+        });
+      }
+
+      if (normalizedUsername.length < 3 || normalizedUsername.length > 30) {
+        return res.status(400).json({
+          error: "Username must be between 3 and 30 characters",
+        });
+      }
+
+      // Check username availability
+      const usernameTaken = await User.findOne({
+        username: normalizedUsername,
+      });
+      if (usernameTaken) {
+        return res.status(409).json({
+          error: "Username already taken",
+          field: "username",
         });
       }
     }
@@ -82,31 +107,16 @@ router.post("/signup", async (req, res) => {
 
     // Normalize inputs
     const normalizedEmail = email.toLowerCase().trim();
-    const normalizedUsername = username ? username.toLowerCase().trim() : null;
+    const normalizedUsername = username
+      ? username.toLowerCase().trim()
+      : undefined;
     const normalizedInstaHandle = instaHandle
       ? instaHandle.toLowerCase().trim()
       : undefined;
     const normalizedWebsite = website
       ? website.toLowerCase().trim()
       : undefined;
-    const normalizedBusinessContact = businessContact
-      ? businessContact.trim()
-      : undefined;
-
-    // Username validation for creators
-    if (role === "creator" && normalizedUsername) {
-      if (!/^[a-zA-Z0-9_]+$/.test(normalizedUsername)) {
-        return res.status(400).json({
-          error: "Username can only contain letters, numbers, and underscores",
-        });
-      }
-
-      if (normalizedUsername.length < 3 || normalizedUsername.length > 30) {
-        return res.status(400).json({
-          error: "Username must be between 3 and 30 characters",
-        });
-      }
-    }
+    const normalizedBusinessContact = businessContact?.trim();
 
     // Email uniqueness check
     const existingUser = await User.findOne({ email: normalizedEmail });
@@ -117,35 +127,24 @@ router.post("/signup", async (req, res) => {
       });
     }
 
-    // Username uniqueness for creators
-    if (role === "creator" && normalizedUsername) {
-      const isAvailable = await User.isUsernameAvailable(normalizedUsername);
-      if (!isAvailable) {
-        return res.status(409).json({
-          error: "Username already taken",
-          field: "username",
-        });
-      }
-    }
-
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create new user
+    // Create user document
     const newUser = new User({
       email: normalizedEmail,
       password: hashedPassword,
       role,
-      username: role === "creator" ? normalizedUsername : undefined,
 
-      // Creator-specific
+      // Creator fields
+      username: role === "creator" ? normalizedUsername : undefined,
       mobileNumber: role === "creator" ? mobileNumber?.trim() : undefined,
       instaHandle: role === "creator" ? normalizedInstaHandle : undefined,
       country: role === "creator" ? country?.trim() : undefined,
       state: role === "creator" ? state?.trim() : undefined,
       city: role === "creator" ? city?.trim() : undefined,
 
-      // Brand-specific
+      // Brand fields
       brandName: role === "brand" ? brandName?.trim() : undefined,
       businessContact: role === "brand" ? normalizedBusinessContact : undefined,
       businessNiche: role === "brand" ? businessNiche?.trim() : undefined,
@@ -164,6 +163,7 @@ router.post("/signup", async (req, res) => {
         username: newUser.username,
       },
     });
+
     console.log("✅ User created:", newUser._id);
     console.log("=== SIGNUP REQUEST END ===");
   } catch (err) {
