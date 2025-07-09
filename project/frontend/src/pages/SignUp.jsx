@@ -2004,7 +2004,7 @@ const SignUp = () => {
         mobileNumber: form.role === "creator" ? form.mobileNumber : undefined,
         instaHandle:
           form.instaHandle && !form.instaHandle.startsWith("@")
-            ? `@${form.instaHandle}`
+            ? `${form.instaHandle}`
             : form.instaHandle || undefined,
         country: form.role === "creator" ? form.country : undefined,
         state: form.role === "creator" ? form.state : undefined,

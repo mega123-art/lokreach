@@ -24,7 +24,7 @@ router.post("/signup", async (req, res) => {
       email,
       password,
       role,
-      username, // for creator only
+      username, // creator only
       brandName,
       businessContact,
       businessNiche,
@@ -36,7 +36,7 @@ router.post("/signup", async (req, res) => {
       city,
     } = req.body;
 
-    // === Basic required checks ===
+    // === Basic validation ===
     if (!email || !password || !role) {
       return res.status(400).json({
         error: "Email, password, and role are required",
@@ -55,23 +55,32 @@ router.post("/signup", async (req, res) => {
       });
     }
 
-    // === Role-based required fields ===
+    // === Role-specific validation ===
     if (role === "creator") {
-      if (!username) {
-        return res.status(400).json({
-          error: "Username is required for creators",
-        });
-      }
-
-      if (!mobileNumber || !instaHandle || !country || !state || !city) {
+      if (
+        !username ||
+        !mobileNumber ||
+        !instaHandle ||
+        !country ||
+        !state ||
+        !city
+      ) {
         return res.status(400).json({
           error: "Missing required fields for creator",
-          required: ["mobileNumber", "instaHandle", "country", "state", "city"],
+          required: [
+            "username",
+            "mobileNumber",
+            "instaHandle",
+            "country",
+            "state",
+            "city",
+          ],
         });
       }
 
-      // Validate username format
       const normalizedUsername = username.toLowerCase().trim();
+
+      // Username validation
       if (!/^[a-zA-Z0-9_]+$/.test(normalizedUsername)) {
         return res.status(400).json({
           error: "Username can only contain letters, numbers, and underscores",
@@ -84,7 +93,6 @@ router.post("/signup", async (req, res) => {
         });
       }
 
-      // Check username availability
       const usernameTaken = await User.findOne({
         username: normalizedUsername,
       });
@@ -105,20 +113,14 @@ router.post("/signup", async (req, res) => {
       }
     }
 
-    // Normalize inputs
+    // === Normalize inputs ===
     const normalizedEmail = email.toLowerCase().trim();
-    const normalizedUsername = username
-      ? username.toLowerCase().trim()
-      : undefined;
-    const normalizedInstaHandle = instaHandle
-      ? instaHandle.toLowerCase().trim()
-      : undefined;
-    const normalizedWebsite = website
-      ? website.toLowerCase().trim()
-      : undefined;
+    const normalizedUsername = username?.toLowerCase().trim();
+    const normalizedInstaHandle = instaHandle?.toLowerCase().trim();
+    const normalizedWebsite = website?.toLowerCase().trim();
     const normalizedBusinessContact = businessContact?.trim();
 
-    // Email uniqueness check
+    // === Check email uniqueness ===
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(409).json({
@@ -127,33 +129,38 @@ router.post("/signup", async (req, res) => {
       });
     }
 
-    // Hash password
+    // === Hash password ===
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user document
+    // === Create new user ===
     const newUser = new User({
       email: normalizedEmail,
       password: hashedPassword,
       role,
 
       // Creator fields
-      username: role === "creator" ? normalizedUsername : undefined,
-      mobileNumber: role === "creator" ? mobileNumber?.trim() : undefined,
-      instaHandle: role === "creator" ? normalizedInstaHandle : undefined,
-      country: role === "creator" ? country?.trim() : undefined,
-      state: role === "creator" ? state?.trim() : undefined,
-      city: role === "creator" ? city?.trim() : undefined,
+      ...(role === "creator" && {
+        username: normalizedUsername,
+        mobileNumber: mobileNumber?.trim(),
+        instaHandle: normalizedInstaHandle,
+        country: country?.trim(),
+        state: state?.trim(),
+        city: city?.trim(),
+      }),
 
       // Brand fields
-      brandName: role === "brand" ? brandName?.trim() : undefined,
-      businessContact: role === "brand" ? normalizedBusinessContact : undefined,
-      businessNiche: role === "brand" ? businessNiche?.trim() : undefined,
-      instaHandle: role === "brand" ? normalizedInstaHandle : undefined,
-      website: role === "brand" ? normalizedWebsite : undefined,
+      ...(role === "brand" && {
+        brandName: brandName?.trim(),
+        businessContact: normalizedBusinessContact,
+        businessNiche: businessNiche?.trim(),
+        ...(instaHandle && { instaHandle: normalizedInstaHandle }),
+        ...(website && { website: normalizedWebsite }),
+      }),
     });
 
     await newUser.save();
 
+    // === Success response ===
     res.status(201).json({
       message: "User registered successfully",
       user: {
@@ -168,6 +175,7 @@ router.post("/signup", async (req, res) => {
     console.log("=== SIGNUP REQUEST END ===");
   } catch (err) {
     console.error("=== SIGNUP ERROR ===");
+
     if (err.code === 11000) {
       const field = Object.keys(err.keyPattern)[0];
       const value = err.keyValue[field];
