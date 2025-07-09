@@ -1810,9 +1810,21 @@
 // export default SignUp;
 
 
-import React, { useState } from 'react';
-import { Eye, EyeOff, Mail, Lock, Phone, Instagram, User, MapPin, Globe, Check } from 'lucide-react';
-import './SignIn.css';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  Phone,
+  Instagram,
+  User,
+  MapPin,
+  Globe,
+  Check,
+} from "lucide-react";
+import "./SignIn.css";
 
 const SignUp = () => {
   const [form, setForm] = useState({
@@ -1821,16 +1833,16 @@ const SignUp = () => {
     password: "",
     confirmPassword: "",
     mobileNumber: "",
-    instagramHandle: "",
+    instaHandle: "",
     country: "",
     state: "",
     city: "",
     brandName: "",
     businessContact: "",
-    niche: "",
+    businessNiche: "",
     website: "",
     acceptTerms: false,
-    username: "", // Added to match backend schema
+    username: "",
   });
 
   const [error, setError] = useState("");
@@ -1838,37 +1850,50 @@ const SignUp = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm(prev => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value.trim(),
     }));
-    
     if (error) setError("");
   };
 
   const validateForm = () => {
-    console.log("Validating form with data:", { ...form, password: "[HIDDEN]", confirmPassword: "[HIDDEN]" });
-    const baseFields = ['email', 'password', 'confirmPassword'];
-    const creatorFields = ['mobileNumber', 'instagramHandle', 'country', 'state', 'city', 'username'];
-    const brandFields = ['brandName', 'businessContact', 'niche'];
-    
-    const requiredFields = form.role === 'creator' 
-      ? [...baseFields, ...creatorFields]
-      : [...baseFields, ...brandFields];
-    
-    const missingFields = requiredFields.filter(field => !form[field]);
-    
+    console.log("Validating form with data:", {
+      ...form,
+      password: "[HIDDEN]",
+      confirmPassword: "[HIDDEN]",
+    });
+    const baseFields = ["email", "password", "confirmPassword"];
+    const creatorFields = [
+      "username",
+      "mobileNumber",
+      "instaHandle",
+      "country",
+      "state",
+      "city",
+      "businessNiche",
+    ];
+    const brandFields = ["brandName", "businessContact", "businessNiche"];
+
+    const requiredFields =
+      form.role === "creator"
+        ? [...baseFields, ...creatorFields]
+        : [...baseFields, ...brandFields];
+
+    const missingFields = requiredFields.filter((field) => !form[field]);
+
     if (missingFields.length > 0) {
       console.log("Missing fields:", missingFields);
       return "Please fill in all required fields";
     }
 
-    if (form.password.length < 6) {
+    if (form.password.length < 8) {
       console.log("Password too short");
-      return "Password must be at least 6 characters long";
+      return "Password must be at least 8 characters long";
     }
 
     if (form.password !== form.confirmPassword) {
@@ -1887,7 +1912,7 @@ const SignUp = () => {
       return "Please enter a valid email address";
     }
 
-    if (form.role === 'creator') {
+    if (form.role === "creator") {
       const mobileRegex = /^[+]?[\d\s\-\(\)]{10,}$/;
       if (!mobileRegex.test(form.mobileNumber)) {
         console.log("Invalid mobile number:", form.mobileNumber);
@@ -1895,8 +1920,8 @@ const SignUp = () => {
       }
 
       const instagramRegex = /^@?[a-zA-Z0-9._]{1,30}$/;
-      if (!instagramRegex.test(form.instagramHandle)) {
-        console.log("Invalid Instagram handle:", form.instagramHandle);
+      if (!instagramRegex.test(form.instaHandle)) {
+        console.log("Invalid Instagram handle:", form.instaHandle);
         return "Please enter a valid Instagram handle (letters, numbers, periods, underscores)";
       }
 
@@ -1906,7 +1931,24 @@ const SignUp = () => {
         return "Username must be 3-30 characters and contain only letters, numbers, or underscores";
       }
 
-      const validCountries = ['US', 'CA', 'UK', 'AU', 'IN', 'DE', 'FR', 'ES', 'IT', 'JP', 'KR', 'BR', 'MX', 'AR', 'CL', 'OTHER'];
+      const validCountries = [
+        "US",
+        "CA",
+        "UK",
+        "AU",
+        "IN",
+        "DE",
+        "FR",
+        "ES",
+        "IT",
+        "JP",
+        "KR",
+        "BR",
+        "MX",
+        "AR",
+        "CL",
+        "OTHER",
+      ];
       if (!validCountries.includes(form.country)) {
         console.log("Invalid country:", form.country);
         return "Please select a valid country";
@@ -1916,6 +1958,12 @@ const SignUp = () => {
       if (!stateRegex.test(form.state)) {
         console.log("Invalid state:", form.state);
         return "Please enter a valid state/province";
+      }
+
+      const cityRegex = /^[a-zA-Z\s]{2,}$/;
+      if (!cityRegex.test(form.city)) {
+        console.log("Invalid city:", form.city);
+        return "Please enter a valid city";
       }
     } else {
       const contactRegex = /^([^\s@]+@[^\s@]+\.[^\s@]+|[+]?[\d\s\-\(\)]{10,})$/;
@@ -1948,33 +1996,34 @@ const SignUp = () => {
     }, 10000);
 
     try {
-      // Prepare payload, mapping to backend schema
       const payload = {
         email: form.email,
         password: form.password,
         role: form.role,
-        username: form.role === 'creator' ? form.username : undefined,
-        // Creator-specific fields
-        mobileNumber: form.role === 'creator' ? form.mobileNumber : undefined,
-        instaHandle: form.instagramHandle && !form.instagramHandle.startsWith('@')
-          ? `@${form.instagramHandle}`
-          : form.instagramHandle || undefined,
-        country: form.role === 'creator' ? form.country : undefined,
-        state: form.role === 'creator' ? form.state : undefined,
-        city: form.role === 'creator' ? form.city : undefined,
-        // Brand-specific fields
-        brandName: form.role === 'brand' ? form.brandName : undefined,
-        businessContact: form.role === 'brand' ? form.businessContact : undefined,
-        businessNiche: form.role === 'brand' ? form.niche : undefined,
-        website: form.role === 'brand' ? form.website : undefined,
+        username: form.role === "creator" ? form.username : undefined,
+        mobileNumber: form.role === "creator" ? form.mobileNumber : undefined,
+        instaHandle:
+          form.instaHandle && !form.instaHandle.startsWith("@")
+            ? `@${form.instaHandle}`
+            : form.instaHandle || undefined,
+        country: form.role === "creator" ? form.country : undefined,
+        state: form.role === "creator" ? form.state : undefined,
+        city: form.role === "creator" ? form.city : undefined,
+        brandName: form.role === "brand" ? form.brandName : undefined,
+        businessContact:
+          form.role === "brand" ? form.businessContact : undefined,
+        businessNiche: form.businessNiche || undefined,
+        website: form.role === "brand" ? form.website : undefined,
       };
 
       console.log("Submitting to API:", { ...payload, password: "[HIDDEN]" });
 
-      const API_URL = `${process.env.VITE_API_URL}/auth/signup` || 'http://localhost:5000/api/auth/signup';
+      const API_URL = import.meta.env.VITE_API_URL
+        ? `${import.meta.env.VITE_API_URL}/auth/signup`
+        : "http://localhost:5000/api/auth/signup";
       const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
@@ -1983,13 +2032,22 @@ const SignUp = () => {
 
       if (!response.ok) {
         if (response.status === 400) {
-          throw new Error(responseData.error || "Invalid data provided. Please check your inputs.");
+          throw new Error(
+            responseData.error ||
+              "Invalid data provided. Please check your inputs."
+          );
         } else if (response.status === 409) {
-          throw new Error(responseData.error || "Email or username already in use.");
+          throw new Error(
+            responseData.error || "Email or username already in use."
+          );
         } else if (response.status === 500) {
-          throw new Error(responseData.error || "Server error. Please try again later.");
+          throw new Error(
+            responseData.error || "Server error. Please try again later."
+          );
         } else {
-          throw new Error(responseData.error || "Signup failed. Please try again.");
+          throw new Error(
+            responseData.error || "Signup failed. Please try again."
+          );
         }
       }
 
@@ -2000,21 +2058,26 @@ const SignUp = () => {
         password: "",
         confirmPassword: "",
         mobileNumber: "",
-        instagramHandle: "",
+        instaHandle: "",
         country: "",
         state: "",
         city: "",
         brandName: "",
         businessContact: "",
-        niche: "",
+        businessNiche: "",
         website: "",
         acceptTerms: false,
         username: "",
       });
-      
+
+      setTimeout(() => {
+        navigate("/signin");
+      }, 1500);
     } catch (err) {
       console.error("Signup error:", err.message);
-      setError(err.message || "An error occurred during signup. Please try again.");
+      setError(
+        err.message || "An error occurred during signup. Please try again."
+      );
     } finally {
       clearTimeout(timeout);
       setIsLoading(false);
@@ -2024,38 +2087,134 @@ const SignUp = () => {
   return (
     <div className="min-h-screen bg-[#50142c] relative overflow-hidden flex items-center justify-center p-4">
       <div className="absolute inset-0 opacity-20">
-        <div className="absolute top-10 left-10 w-32 h-32 border-2 border-white rounded-full animate-bounce" style={{animationDuration: '2s'}}></div>
-        <div className="absolute top-20 right-20 w-24 h-24 border-2 border-white rounded-full animate-pulse" style={{animationDuration: '1.5s'}}></div>
-        <div className="absolute bottom-20 left-20 w-28 h-28 border-2 border-white rounded-full animate-ping" style={{animationDuration: '2.5s'}}></div>
-        <div className="absolute bottom-10 right-10 w-36 h-36 border-2 border-white rounded-full animate-bounce" style={{animationDuration: '3s', animationDelay: '0.5s'}}></div>
-        <div className="absolute top-1/4 left-1/4 w-20 h-20 border-2 border-white rounded-full animate-spin" style={{animationDuration: '2s'}}></div>
-        <div className="absolute top-3/4 right-1/4 w-16 h-16 border-2 border-white rounded-full animate-spin" style={{animationDuration: '1.5s', animationDirection: 'reverse'}}></div>
-        <div className="absolute top-1/2 left-1/2 w-24 h-24 border-2 border-white rounded-full animate-spin" style={{animationDuration: '3s'}}></div>
-        <div className="absolute top-16 left-1/3 w-32 h-1 bg-white origin-left animate-spin" style={{animationDuration: '4s'}}></div>
-        <div className="absolute bottom-16 right-1/3 w-40 h-1 bg-white origin-right animate-spin" style={{animationDuration: '3s', animationDirection: 'reverse'}}></div>
-        <div className="absolute top-1/2 left-1/6 w-28 h-1 bg-white origin-center animate-spin" style={{animationDuration: '5s'}}></div>
-        <div className="absolute top-1/3 right-1/6 w-36 h-1 bg-white origin-center animate-spin" style={{animationDuration: '2.5s', animationDirection: 'reverse'}}></div>
-        <div className="absolute top-1/5 left-1/2 w-6 h-6 bg-white rounded-full animate-ping" style={{animationDuration: '1s'}}></div>
-        <div className="absolute bottom-1/5 left-1/3 w-8 h-8 bg-white rounded-full animate-pulse" style={{animationDuration: '1.2s'}}></div>
-        <div className="absolute top-2/3 right-1/5 w-5 h-5 bg-white rounded-full animate-bounce" style={{animationDuration: '1.8s'}}></div>
-        <div className="absolute top-1/6 right-1/2 w-7 h-7 bg-white rounded-full animate-ping" style={{animationDuration: '2s'}}></div>
-        <div className="absolute top-32 left-32 w-12 h-12 border-2 border-white animate-spin" style={{animationDuration: '2s'}}></div>
-        <div className="absolute bottom-32 right-32 w-16 h-16 border-2 border-white animate-spin" style={{animationDuration: '1.5s', animationDirection: 'reverse'}}></div>
-        <div className="absolute top-1/2 right-1/3 w-10 h-10 border-2 border-white animate-spin" style={{animationDuration: '3s'}}></div>
-        <div className="absolute top-24 right-24 w-32 h-1 bg-white rotate-45 animate-pulse" style={{animationDuration: '1s'}}></div>
-        <div className="absolute bottom-24 left-24 w-28 h-1 bg-white -rotate-45 animate-ping" style={{animationDuration: '1.5s'}}></div>
-        <div className="absolute top-1/3 left-1/5 w-24 h-1 bg-white rotate-12 animate-bounce" style={{animationDuration: '2s'}}></div>
-        <div className="absolute top-1/4 right-1/5 w-14 h-14 border-2 border-white rounded-full animate-bounce" style={{animationDuration: '1s'}}></div>
-        <div className="absolute bottom-1/4 left-1/5 w-18 h-18 border-2 border-white rounded-full animate-ping" style={{animationDuration: '1.3s'}}></div>
-        <div className="absolute top-3/5 left-3/5 w-20 h-20 border-2 border-white rounded-full animate-pulse" style={{animationDuration: '0.8s'}}></div>
-        <div className="absolute top-1/6 left-2/3 w-3 h-3 bg-white rounded-full animate-bounce" style={{animationDuration: '1.2s'}}></div>
-        <div className="absolute top-2/3 left-1/6 w-4 h-4 bg-white rounded-full animate-ping" style={{animationDuration: '1s'}}></div>
-        <div className="absolute top-5/6 right-1/6 w-2 h-2 bg-white rounded-full animate-pulse" style={{animationDuration: '0.9s'}}></div>
-        <div className="absolute top-1/2 right-1/8 w-3 h-3 bg-white rounded-full animate-bounce" style={{animationDuration: '1.4s'}}></div>
-        <div className="absolute top-40 left-40 w-8 h-2 bg-white animate-spin" style={{animationDuration: '2s'}}></div>
-        <div className="absolute top-40 left-40 w-2 h-8 bg-white animate-spin" style={{animationDuration: '2s'}}></div>
-        <div className="absolute bottom-40 right-40 w-6 h-1.5 bg-white animate-spin" style={{animationDuration: '1.5s', animationDirection: 'reverse'}}></div>
-        <div className="absolute bottom-40 right-40 w-1.5 h-6 bg-white animate-spin" style={{animationDuration: '1.5s', animationDirection: 'reverse'}}></div>
+        <div
+          className="absolute top-10 left-10 w-32 h-32 border-2 border-white rounded-full animate-bounce"
+          style={{ animationDuration: "2s" }}
+        ></div>
+        <div
+          className="absolute top-20 right-20 w-24 h-24 border-2 border-white rounded-full animate-pulse"
+          style={{ animationDuration: "1.5s" }}
+        ></div>
+        <div
+          className="absolute bottom-20 left-20 w-28 h-28 border-2 border-white rounded-full animate-ping"
+          style={{ animationDuration: "2.5s" }}
+        ></div>
+        <div
+          className="absolute bottom-10 right-10 w-36 h-36 border-2 border-white rounded-full animate-bounce"
+          style={{ animationDuration: "3s", animationDelay: "0.5s" }}
+        ></div>
+        <div
+          className="absolute top-1/4 left-1/4 w-20 h-20 border-2 border-white rounded-full animate-spin"
+          style={{ animationDuration: "2s" }}
+        ></div>
+        <div
+          className="absolute top-3/4 right-1/4 w-16 h-16 border-2 border-white rounded-full animate-spin"
+          style={{ animationDuration: "1.5s", animationDirection: "reverse" }}
+        ></div>
+        <div
+          className="absolute top-1/2 left-1/2 w-24 h-24 border-2 border-white rounded-full animate-spin"
+          style={{ animationDuration: "3s" }}
+        ></div>
+        <div
+          className="absolute top-16 left-1/3 w-32 h-1 bg-white origin-left animate-spin"
+          style={{ animationDuration: "4s" }}
+        ></div>
+        <div
+          className="absolute bottom-16 right-1/3 w-40 h-1 bg-white origin-right animate-spin"
+          style={{ animationDuration: "3s", animationDirection: "reverse" }}
+        ></div>
+        <div
+          className="absolute top-1/2 left-1/6 w-28 h-1 bg-white origin-center animate-spin"
+          style={{ animationDuration: "5s" }}
+        ></div>
+        <div
+          className="absolute top-1/3 right-1/6 w-36 h-1 bg-white origin-center animate-spin"
+          style={{ animationDuration: "2.5s", animationDirection: "reverse" }}
+        ></div>
+        <div
+          className="absolute top-1/5 left-1/2 w-6 h-6 bg-white rounded-full animate-ping"
+          style={{ animationDuration: "1s" }}
+        ></div>
+        <div
+          className="absolute bottom-1/5 left-1/3 w-8 h-8 bg-white rounded-full animate-pulse"
+          style={{ animationDuration: "1.2s" }}
+        ></div>
+        <div
+          className="absolute top-2/3 right-1/5 w-5 h-5 bg-white rounded-full animate-bounce"
+          style={{ animationDuration: "1.8s" }}
+        ></div>
+        <div
+          className="absolute top-1/6 right-1/2 w-7 h-7 bg-white rounded-full animate-ping"
+          style={{ animationDuration: "2s" }}
+        ></div>
+        <div
+          className="absolute top-32 left-32 w-12 h-12 border-2 border-white animate-spin"
+          style={{ animationDuration: "2s" }}
+        ></div>
+        <div
+          className="absolute bottom-32 right-32 w-16 h-16 border-2 border-white animate-spin"
+          style={{ animationDuration: "1.5s", animationDirection: "reverse" }}
+        ></div>
+        <div
+          className="absolute top-1/2 right-1/3 w-10 h-10 border-2 border-white animate-spin"
+          style={{ animationDuration: "3s" }}
+        ></div>
+        <div
+          className="absolute top-24 right-24 w-32 h-1 bg-white rotate-45 animate-pulse"
+          style={{ animationDuration: "1s" }}
+        ></div>
+        <div
+          className="absolute bottom-24 left-24 w-28 h-1 bg-white -rotate-45 animate-ping"
+          style={{ animationDuration: "1.5s" }}
+        ></div>
+        <div
+          className="absolute top-1/3 left-1/5 w-24 h-1 bg-white rotate-12 animate-bounce"
+          style={{ animationDuration: "2s" }}
+        ></div>
+        <div
+          className="absolute top-1/4 right-1/5 w-14 h-14 border-2 border-white rounded-full animate-bounce"
+          style={{ animationDuration: "1s" }}
+        ></div>
+        <div
+          className="absolute bottom-1/4 left-1/5 w-18 h-18 border-2 border-white rounded-full animate-ping"
+          style={{ animationDuration: "1.3s" }}
+        ></div>
+        <div
+          className="absolute top-3/5 left-3/5 w-20 h-20 border-2 border-white rounded-full animate-pulse"
+          style={{ animationDuration: "0.8s" }}
+        ></div>
+        <div
+          className="absolute top-1/6 left-2/3 w-3 h-3 bg-white rounded-full animate-bounce"
+          style={{ animationDuration: "1.2s" }}
+        ></div>
+        <div
+          className="absolute top-2/3 left-1/6 w-4 h-4 bg-white rounded-full animate-ping"
+          style={{ animationDuration: "1s" }}
+        ></div>
+        <div
+          className="absolute top-5/6 right-1/6 w-2 h-2 bg-white rounded-full animate-pulse"
+          style={{ animationDuration: "0.9s" }}
+        ></div>
+        <div
+          className="absolute top-1/2 right-1/8 w-3 h-3 bg-white rounded-full animate-bounce"
+          style={{ animationDuration: "1.4s" }}
+        ></div>
+        <div
+          className="absolute top-40 left-40 w-8 h-2 bg-white animate-spin"
+          style={{ animationDuration: "2s" }}
+        ></div>
+        <div
+          className="absolute top-40 left-40 w-2 h-8 bg-white animate-spin"
+          style={{ animationDuration: "2s" }}
+        ></div>
+        <div
+          className="absolute bottom-40 right-40 w-6 h-1.5 bg-white animate-spin"
+          style={{ animationDuration: "1.5s", animationDirection: "reverse" }}
+        ></div>
+        <div
+          className="absolute bottom-40 right-40 w-1.5 h-6 bg-white animate-spin"
+          style={{ animationDuration: "1.5s", animationDirection: "reverse" }}
+        ></div>
       </div>
       <div className="absolute inset-0 bg-gradient-to-br from-[#50142c] via-transparent to-[#50142c] opacity-40"></div>
       <div className="absolute inset-0 bg-gradient-radial from-transparent via-[#50142c]/20 to-[#50142c]/40"></div>
@@ -2065,7 +2224,9 @@ const SignUp = () => {
             <h1 className="text-3xl font-bold text-white mb-2 t11">
               Join LocoLab
             </h1>
-            <p className="text-gray-100 t11">Create your account and start connecting</p>
+            <p className="text-gray-100 t11">
+              Create your account and start connecting
+            </p>
           </div>
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -2083,59 +2244,77 @@ const SignUp = () => {
                 I am a *
               </label>
               <div className="grid grid-cols-2 gap-4">
-                <label className={`relative cursor-pointer rounded-lg border-2 p-4 transition-all duration-200 ${
-                  form.role === 'creator' 
-                    ? 'border-[#d20054] bg-gradient-to-br from-[#d20054]/10 to-[#50142c]/5 shadow-md' 
-                    : 'border-gray-300 hover:border-[#d20054]/50 hover:bg-gray-50'
-                }`}>
+                <label
+                  className={`relative cursor-pointer rounded-lg border-2 p-4 transition-all duration-200 ${
+                    form.role === "creator"
+                      ? "border-[#d20054] bg-gradient-to-br from-[#d20054]/10 to-[#50142c]/5 shadow-md"
+                      : "border-gray-300 hover:border-[#d20054]/50 hover:bg-gray-50"
+                  }`}
+                >
                   <input
                     type="radio"
                     name="role"
                     value="creator"
-                    checked={form.role === 'creator'}
+                    checked={form.role === "creator"}
                     onChange={handleChange}
                     className="sr-only"
                     disabled={isLoading}
                   />
                   <div className="flex items-center space-x-3">
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                      form.role === 'creator' 
-                        ? 'border-[#d20054] bg-[#d20054]' 
-                        : 'border-gray-300'
-                    }`}>
-                      {form.role === 'creator' && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                        form.role === "creator"
+                          ? "border-[#d20054] bg-[#d20054]"
+                          : "border-gray-300"
+                      }`}
+                    >
+                      {form.role === "creator" && (
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      )}
                     </div>
                     <div>
-                      <div className="font-semibold text-[#50142c]">Content Creator</div>
-                      <div className="text-sm text-gray-700">I create content and want to work with brands</div>
+                      <div className="font-semibold text-[#50142c]">
+                        Content Creator
+                      </div>
+                      <div className="text-sm text-gray-700">
+                        I create content and want to work with brands
+                      </div>
                     </div>
                   </div>
                 </label>
-                <label className={`relative cursor-pointer rounded-lg border-2 p-4 transition-all duration-200 ${
-                  form.role === 'brand' 
-                    ? 'border-[#d20054] bg-gradient-to-br from-[#d20054]/10 to-[#50142c]/5 shadow-md' 
-                    : 'border-gray-300 hover:border-[#d20054]/50 hover:bg-gray-50'
-                }`}>
+                <label
+                  className={`relative cursor-pointer rounded-lg border-2 p-4 transition-all duration-200 ${
+                    form.role === "brand"
+                      ? "border-[#d20054] bg-gradient-to-br from-[#d20054]/10 to-[#50142c]/5 shadow-md"
+                      : "border-gray-300 hover:border-[#d20054]/50 hover:bg-gray-50"
+                  }`}
+                >
                   <input
                     type="radio"
                     name="role"
                     value="brand"
-                    checked={form.role === 'brand'}
+                    checked={form.role === "brand"}
                     onChange={handleChange}
                     className="sr-only"
                     disabled={isLoading}
                   />
                   <div className="flex items-center space-x-3">
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                      form.role === 'brand' 
-                        ? 'border-[#d20054] bg-[#d20054]' 
-                        : 'border-gray-300'
-                    }`}>
-                      {form.role === 'brand' && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                        form.role === "brand"
+                          ? "border-[#d20054] bg-[#d20054]"
+                          : "border-gray-300"
+                      }`}
+                    >
+                      {form.role === "brand" && (
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      )}
                     </div>
                     <div>
                       <div className="font-semibold text-[#50142c]">Brand</div>
-                      <div className="text-sm text-gray-700">I represent a brand and want to find creators</div>
+                      <div className="text-sm text-gray-700">
+                        I represent a brand and want to find creators
+                      </div>
                     </div>
                   </div>
                 </label>
@@ -2143,21 +2322,23 @@ const SignUp = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 t12">
               <div className="space-y-4 bg-gradient-to-b from-gray-50/50 to-white/50 p-4 rounded-lg border border-gray-200">
-                <h3 className="text-lg font-semibold text-[#50142c] border-b-2 border-[#d20054] pb-2">Account Information</h3>
+                <h3 className="text-lg font-semibold text-[#50142c] border-b-2 border-[#d20054] pb-2">
+                  Account Information
+                </h3>
                 <div className="space-y-1">
                   <label className="block text-sm font-semibold text-[#50142c]">
                     Email Address *
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Mail className="h-4 w-4 text-gray-400 t9" />
+                      <Mail className="h-5 w-5 text-gray-400 t9" />
                     </div>
                     <input
                       type="email"
                       name="email"
                       value={form.email}
                       onChange={handleChange}
-                      className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
+                      className="w-full pl-10 pr-3 py-3 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
                       placeholder="Enter your email"
                       required
                       disabled={isLoading}
@@ -2170,15 +2351,15 @@ const SignUp = () => {
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Lock className="h-4 w-4 text-gray-400 t9" />
+                      <Lock className="h-5 w-5 text-gray-400 t9" />
                     </div>
                     <input
                       type={showPassword ? "text" : "password"}
                       name="password"
                       value={form.password}
                       onChange={handleChange}
-                      className="w-full pl-9 pr-10 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
-                      placeholder="Create a password (min 6 chars)"
+                      className="w-full pl-10 pr-10 py-3 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
+                      placeholder="Create a password (min 8 chars)"
                       required
                       disabled={isLoading}
                     />
@@ -2188,9 +2369,9 @@ const SignUp = () => {
                       className="absolute inset-y-0 right-0 pr-3 flex items-center"
                     >
                       {showPassword ? (
-                        <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors t10" />
+                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors t10" />
                       ) : (
-                        <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors t10" />
+                        <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors t10" />
                       )}
                     </button>
                   </div>
@@ -2201,46 +2382,48 @@ const SignUp = () => {
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Lock className="h-4 w-4 text-gray-400 t9" />
+                      <Lock className="h-5 w-5 text-gray-400 t9" />
                     </div>
                     <input
                       type={showConfirmPassword ? "text" : "password"}
                       name="confirmPassword"
                       value={form.confirmPassword}
                       onChange={handleChange}
-                      className="w-full pl-9 pr-10 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
+                      className="w-full pl-10 pr-10 py-3 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
                       placeholder="Confirm your password"
                       required
                       disabled={isLoading}
                     />
                     <button
                       type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
                       className="absolute inset-y-0 right-0 pr-3 flex items-center"
                     >
                       {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors t10" />
+                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors t10" />
                       ) : (
-                        <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors t10" />
+                        <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors t10" />
                       )}
                     </button>
                   </div>
                 </div>
-                {form.role === 'creator' && (
+                {form.role === "creator" && (
                   <div className="space-y-1">
                     <label className="block text-sm font-semibold text-[#50142c]">
                       Username *
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <User className="h-4 w-4 text-gray-400 t9" />
+                        <User className="h-5 w-5 text-gray-400 t9" />
                       </div>
                       <input
                         type="text"
                         name="username"
                         value={form.username}
                         onChange={handleChange}
-                        className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
+                        className="w-full pl-10 pr-3 py-3 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
                         placeholder="Enter your username"
                         required
                         disabled={isLoading}
@@ -2251,9 +2434,11 @@ const SignUp = () => {
               </div>
               <div className="space-y-4 bg-gradient-to-b from-gray-50/50 to-white/50 p-4 rounded-lg border border-gray-200">
                 <h3 className="text-lg font-semibold text-[#50142c] border-b-2 border-[#d20054] pb-2">
-                  {form.role === 'creator' ? 'Contact Information' : 'Business Information'}
+                  {form.role === "creator"
+                    ? "Contact Information"
+                    : "Business Information"}
                 </h3>
-                {form.role === 'creator' ? (
+                {form.role === "creator" ? (
                   <>
                     <div className="space-y-1">
                       <label className="block text-sm font-semibold text-[#50142c]">
@@ -2261,14 +2446,14 @@ const SignUp = () => {
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Phone className="h-4 w-4 text-gray-400 t9" />
+                          <Phone className="h-5 w-5 text-gray-400 t9" />
                         </div>
                         <input
                           type="tel"
                           name="mobileNumber"
                           value={form.mobileNumber}
                           onChange={handleChange}
-                          className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
+                          className="w-full pl-10 pr-3 py-3 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
                           placeholder="+1 234 567 8900"
                           required
                           disabled={isLoading}
@@ -2281,14 +2466,14 @@ const SignUp = () => {
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Instagram className="h-4 w-4 text-gray-400 t9" />
+                          <Instagram className="h-5 w-5 text-gray-400 t9" />
                         </div>
                         <input
                           type="text"
-                          name="instagramHandle"
-                          value={form.instagramHandle}
+                          name="instaHandle"
+                          value={form.instaHandle}
                           onChange={handleChange}
-                          className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
+                          className="w-full pl-10 pr-3 py-3 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
                           placeholder="@your_instagram_handle"
                           required
                           disabled={isLoading}
@@ -2301,13 +2486,13 @@ const SignUp = () => {
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Globe className="h-4 w-4 text-gray-400 t9" />
+                          <Globe className="h-5 w-5 text-gray-400 t9" />
                         </div>
                         <select
-                          name="niche"
-                          value={form.niche}
+                          name="businessNiche"
+                          value={form.businessNiche}
                           onChange={handleChange}
-                          className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 text-sm appearance-none bg-white t8"
+                          className="w-full pl-10 pr-3 py-3 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 text-sm appearance-none bg-white t8"
                           required
                           disabled={isLoading}
                         >
@@ -2343,14 +2528,14 @@ const SignUp = () => {
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <User className="h-4 w-4 text-gray-400" />
+                          <User className="h-5 w-5 text-gray-400" />
                         </div>
                         <input
                           type="text"
                           name="brandName"
                           value={form.brandName}
                           onChange={handleChange}
-                          className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
+                          className="w-full pl-10 pr-3 py-3 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
                           placeholder="Enter your brand/business name"
                           required
                           disabled={isLoading}
@@ -2363,14 +2548,14 @@ const SignUp = () => {
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Phone className="h-4 w-4 text-gray-400" />
+                          <Phone className="h-5 w-5 text-gray-400" />
                         </div>
                         <input
                           type="text"
                           name="businessContact"
                           value={form.businessContact}
                           onChange={handleChange}
-                          className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm"
+                          className="w-full pl-10 pr-3 py-3 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
                           placeholder="Phone number or contact email"
                           required
                           disabled={isLoading}
@@ -2383,13 +2568,13 @@ const SignUp = () => {
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Globe className="h-4 w-4 text-gray-400 t9" />
+                          <Globe className="h-5 w-5 text-gray-400 t9" />
                         </div>
                         <select
-                          name="niche"
-                          value={form.niche}
+                          name="businessNiche"
+                          value={form.businessNiche}
                           onChange={handleChange}
-                          className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 text-sm appearance-none bg-white"
+                          className="w-full pl-10 pr-3 py-3 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 text-sm appearance-none bg-white t8"
                           required
                           disabled={isLoading}
                         >
@@ -2415,9 +2600,11 @@ const SignUp = () => {
               </div>
               <div className="space-y-4 bg-gradient-to-b from-gray-50/50 to-white/50 p-4 rounded-lg border border-gray-200">
                 <h3 className="text-lg font-semibold text-[#50142c] border-b-2 border-[#d20054] pb-2">
-                  {form.role === 'creator' ? 'Location Details' : 'Additional Information'}
+                  {form.role === "creator"
+                    ? "Location Details"
+                    : "Additional Information"}
                 </h3>
-                {form.role === 'creator' ? (
+                {form.role === "creator" ? (
                   <>
                     <div className="space-y-1">
                       <label className="block text-sm font-semibold text-[#50142c]">
@@ -2425,13 +2612,13 @@ const SignUp = () => {
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Globe className="h-4 w-4 text-gray-400 t9" />
+                          <Globe className="h-5 w-5 text-gray-400 t9" />
                         </div>
                         <select
                           name="country"
                           value={form.country}
                           onChange={handleChange}
-                          className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 text-sm appearance-none bg-white t8"
+                          className="w-full pl-10 pr-3 py-3 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 text-sm appearance-none bg-white t8"
                           required
                           disabled={isLoading}
                         >
@@ -2461,14 +2648,14 @@ const SignUp = () => {
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <MapPin className="h-4 w-4 text-gray-400 t9" />
+                          <MapPin className="h-5 w-5 text-gray-400 t9" />
                         </div>
                         <input
                           type="text"
                           name="state"
                           value={form.state}
                           onChange={handleChange}
-                          className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
+                          className="w-full pl-10 pr-3 py-3 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
                           placeholder="Enter your state/province"
                           required
                           disabled={isLoading}
@@ -2481,14 +2668,14 @@ const SignUp = () => {
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <MapPin className="h-4 w-4 text-gray-400 t9" />
+                          <MapPin className="h-5 w-5 text-gray-400 t9" />
                         </div>
                         <input
                           type="text"
                           name="city"
                           value={form.city}
                           onChange={handleChange}
-                          className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
+                          className="w-full pl-10 pr-3 py-3 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
                           placeholder="Enter your city"
                           required
                           disabled={isLoading}
@@ -2504,14 +2691,14 @@ const SignUp = () => {
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Instagram className="h-4 w-4 text-gray-400" />
+                          <Instagram className="h-5 w-5 text-gray-400" />
                         </div>
                         <input
                           type="text"
-                          name="instagramHandle"
-                          value={form.instagramHandle}
+                          name="instaHandle"
+                          value={form.instaHandle}
                           onChange={handleChange}
-                          className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm"
+                          className="w-full pl-10 pr-3 py-3 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
                           placeholder="@your_brand_instagram"
                           disabled={isLoading}
                         />
@@ -2523,14 +2710,14 @@ const SignUp = () => {
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Globe className="h-4 w-4 text-gray-400" />
+                          <Globe className="h-5 w-5 text-gray-400" />
                         </div>
                         <input
                           type="url"
                           name="website"
                           value={form.website}
                           onChange={handleChange}
-                          className="w-full pl-9 pr-3 py-2.5 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm"
+                          className="w-full pl-10 pr-3 py-3 border-2 border-[#d20054] rounded-lg focus:ring-2 focus:ring-[#d20054] focus:border-transparent transition-all duration-200 placeholder-gray-400 text-sm t8"
                           placeholder="https://your-website.com"
                           disabled={isLoading}
                         />
@@ -2553,25 +2740,29 @@ const SignUp = () => {
                       required
                       disabled={isLoading}
                     />
-                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                      form.acceptTerms 
-                        ? 'border-[#d20054] bg-[#d20054]' 
-                        : 'border-gray-300 hover:border-[#d20054]/50'
-                    }`}>
-                      {form.acceptTerms && <Check className="w-3 h-3 text-white " />}
+                    <div
+                      className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                        form.acceptTerms
+                          ? "border-[#d20054] bg-[#d20054]"
+                          : "border-gray-300 hover:border-[#d20054]/50"
+                      }`}
+                    >
+                      {form.acceptTerms && (
+                        <Check className="w-3 h-3 text-white " />
+                      )}
                     </div>
                   </div>
                   <div className="text-sm">
                     <span className="text-[#50142c]">I accept the </span>
                     <a
-                      href="#"
+                      href="/terms"
                       className="text-[#d20054] hover:text-[#b0004a] font-semibold transition-colors"
                     >
                       Terms and Conditions
                     </a>
                     <span className="text-[#50142c]"> and </span>
                     <a
-                      href="#"
+                      href="/privacy"
                       className="text-[#d20054] hover:text-[#b0004a] font-semibold transition-colors"
                     >
                       Privacy Policy
@@ -2602,7 +2793,7 @@ const SignUp = () => {
             <p className="text-sm text-[#50142c]">
               Already have an account?{" "}
               <a
-                href="#"
+                href="/signin"
                 className="text-[#d20054] hover:text-[#b0004a] font-semibold transition-colors underline decoration-[#d20054]/30 hover:decoration-[#d20054]"
               >
                 Sign in
@@ -2613,24 +2804,53 @@ const SignUp = () => {
       </div>
       <style jsx>{`
         @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          25% { transform: translateY(-30px) rotate(90deg); }
-          50% { transform: translateY(-60px) rotate(180deg); }
-          75% { transform: translateY(-30px) rotate(270deg); }
+          0%,
+          100% {
+            transform: translateY(0px) rotate(0deg);
+          }
+          25% {
+            transform: translateY(-30px) rotate(90deg);
+          }
+          50% {
+            transform: translateY(-60px) rotate(180deg);
+          }
+          75% {
+            transform: translateY(-30px) rotate(270deg);
+          }
         }
         @keyframes drift {
-          0% { transform: translateX(0px) translateY(0px); }
-          25% { transform: translateX(20px) translateY(-10px); }
-          50% { transform: translateX(0px) translateY(-20px); }
-          75% { transform: translateX(-20px) translateY(-10px); }
-          100% { transform: translateX(0px) translateY(0px); }
+          0% {
+            transform: translateX(0px) translateY(0px);
+          }
+          25% {
+            transform: translateX(20px) translateY(-10px);
+          }
+          50% {
+            transform: translateX(0px) translateY(-20px);
+          }
+          75% {
+            transform: translateX(-20px) translateY(-10px);
+          }
+          100% {
+            transform: translateX(0px) translateY(0px);
+          }
         }
         @keyframes zigzag {
-          0% { transform: translateX(0px) translateY(0px); }
-          25% { transform: translateX(30px) translateY(-20px); }
-          50% { transform: translateX(-30px) translateY(-40px); }
-          75% { transform: translateX(30px) translateY(-20px); }
-          100% { transform: translateX(0px) translateY(0px); }
+          0% {
+            transform: translateX(0px) translateY(0px);
+          }
+          25% {
+            transform: translateX(30px) translateY(-20px);
+          }
+          50% {
+            transform: translateX(-30px) translateY(-40px);
+          }
+          75% {
+            transform: translateX(30px) translateY(-20px);
+          }
+          100% {
+            transform: translateX(0px) translateY(0px);
+          }
         }
       `}</style>
     </div>
