@@ -22,26 +22,34 @@ const userSchema = new mongoose.Schema(
     brandName: {
       type: String,
       trim: true,
-      required: true,
+      required: function () {
+        return this.role === "brand";
+      },
     },
 
     businessContact: {
       type: String,
       trim: true,
-      required: true,
+      required: function () {
+        return this.role === "brand";
+      },
     },
 
     businessNiche: {
       type: String,
       trim: true,
-      required: true,
+      required: function () {
+        return this.role === "brand";
+      },
     },
 
     instaHandle: {
       type: String,
       trim: true,
       lowercase: true,
-      required: true,
+      required: function () {
+        return this.role === "creator";
+      },
     },
 
     website: {
@@ -53,7 +61,9 @@ const userSchema = new mongoose.Schema(
     mobileNumber: {
       type: String,
       trim: true,
-      required: true,
+      required: function () {
+        return this.role === "creator";
+      },
     },
 
     country: {
@@ -80,6 +90,10 @@ const userSchema = new mongoose.Schema(
       sparse: true, // This allows null values but ensures uniqueness when present
       trim: true,
       lowercase: true,
+      required: function () {
+        return this.role === "creator";
+      },
+
       validate: {
         validator: function (v) {
           // Only validate username format if it's provided
@@ -89,7 +103,7 @@ const userSchema = new mongoose.Schema(
         message: "Username can only contain letters, numbers, and underscores",
       },
     },
-    
+
     resetToken: String,
     resetTokenExpiry: Date,
   },
